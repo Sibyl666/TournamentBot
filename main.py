@@ -138,8 +138,8 @@ def remove_user_from_tournament(discord_id):
         return None, None
 
     for team in db["teams"]:
-        u1_discord = team["user1"]["discord_id"]
-        u2_discord = team["user2"]["discord_id"]
+        u1_discord = team["user1"]
+        u2_discord = team["user2"]
 
         if u1_discord == discord_id or u2_discord == discord_id:
             disband_team(team)
