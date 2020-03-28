@@ -158,7 +158,25 @@ async def create_paged_embed(ctx, data, fixed_fields):
         await ctx.send()
 
 
+@client.command(name='players')
+async def show_registered_teams(ctx):
 
+    users = read_tournament_db()["users"]
+
+    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
+                    "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
+
+    desc_text = ""
+    for user_no, user in enumerate(users):
+        user_rank = user["statistics"]["pp_rank"]
+        username = user["username"]
+        desc_text += f"#{user_no} - {username} - #{user_rank}\n"
+
+    embed = discord.Embed(description=f"{desc_text}")
+    embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
+    embed.set_thumbnail(
+        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+    await ctx.send(embed=embed)
 
 @client.command(name='teams')
 async def show_registered_teams(ctx):
@@ -178,7 +196,7 @@ async def show_registered_teams(ctx):
         team_p2 = team["user2"]
         desc_text += f"{team_name} - {team_p1} & {team_p2}\n"
 
-    embed = discord.Embed(description="desc_text")
+    embed = discord.Embed(description=f"{desc_text}")
     embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
     await ctx.send(embed=embed)
