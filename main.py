@@ -361,7 +361,15 @@ def disband_team(team):
 @client.event
 async def on_ready():
     print(f"Bot Started!!")
-    read_tournament_db()
+    db = read_tournament_db()
+
+    for user in db["users"]:
+        discord_id = user["discord_id"]
+        discord_user = discord.utils.get(client.get_all_members(), id=discord_id)
+        role = discord.utils.get(discord_user.server.roles, name="Oyuncu")
+        if role not in discord_user.roles:
+            await discord_user.add_roles(discord_user, role)
+
     return
 
 
