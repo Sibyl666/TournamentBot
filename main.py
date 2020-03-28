@@ -202,7 +202,9 @@ async def create_paged_embed(ctx, data, fixed_fields):
 
 @client.command(name='players')
 async def show_registered_players(ctx):
-
+    """
+        Turnuvaya kayıtlı oyuncuları gösterir.
+    """
     users = read_tournament_db()["users"]
 
     fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
@@ -224,7 +226,7 @@ async def show_registered_players(ctx):
 @client.command(name='teams')
 async def show_registered_teams(ctx):
     """
-    Turnuvaya kayıtlı takımları gösterir
+    Turnuvaya kayıtlı takımları gösterir.
     """
 
     db = read_tournament_db()
@@ -260,7 +262,7 @@ async def show_registered_teams(ctx):
 @client.command(name='register')
 async def register_tourney(ctx, osu_user1):
     """
-    Turnuvaya katılan kişiyi listeye ekler
+    Turnuvaya katılan kişiyi listeye ekler.
 
     osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
