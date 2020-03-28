@@ -209,7 +209,11 @@ async def kick_player(ctx, osu_username):
 async def create_paged_embed(ctx, data, fixed_fields, called_by):
     page_no = 1
 
-    max_item_index = len(data)
+    if called_by == "players":
+        max_item_index = len(data["users"])
+    if called_by == "teams":
+        max_item_index = len(data["teams"])
+
     result_per_page = 16  # Show 16 results per page
     max_page = math.ceil(max_item_index / result_per_page)
 
@@ -260,7 +264,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
         await ctx.send(embed=embed)
         return
     else:
-        embed.set_footer(text="Page {page_no} of {max_page}")
+        embed.set_footer(text=f"Page {page_no} of {max_page}")
         msg = await ctx.send(embed=embed)
         reactmoji = ['⬅', '➡']
         while True:
@@ -304,8 +308,8 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
                 embed2 = discord.Embed(description=desc_text, color=tournament_color)
-                embed.set_author(name=fixed_fields["author_name"])
-                embed.set_thumbnail(url=fixed_fields["thumbnail_url"])
+                embed2.set_author(name=fixed_fields["author_name"])
+                embed2.set_thumbnail(url=fixed_fields["thumbnail_url"])
                 embed2.set_footer(text=f"Page {page_no} of {max_page}")
 
                 await msg.clear_reactions()
