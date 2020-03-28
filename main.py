@@ -3,6 +3,7 @@ import json
 import requests
 import math
 import discord
+import asyncio
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
@@ -112,6 +113,13 @@ async def remove_user(ctx):
 
     if ret["removed"]:
         osu_username = info["osu_username"]
+        guild = client.get_guild(402213530599948299)
+        player_role = discord.utils.get(guild.roles, id=693574523324203009)
+        discord_id = ctx.author.id
+        discord_user = discord.utils.get(guild.members, id=discord_id)
+        if player_role in discord_user.roles:
+            await discord_user.add_roles(discord_user, player_role)
+
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
     if ret["disbanded"]:
@@ -157,16 +165,22 @@ def remove_user_from_tournament(discord_id):
 
 @client.command(name='kick')
 @commands.has_permissions(administrator=True)
-async def kick_player(ctx, discord_id):
+async def kick_player(ctx, osu_username):
     """
     Oyuncuyu turnuvadan atar.
 
     osu_user2: Atmak istediğiniz oyuncunun nicki
     """
+    discord_id = "sdfgadfg"
+    db = read_tournament_db()
+    for user in db["users"]:
+        if user["username"] == osu_username:
+            discord_id = user["discord_id"]
+
     try:
         discord_id = int(discord_id)
     except:
-        await ctx.send("Geçerli discord id'si girin")
+        await ctx.send("Geçerli bir oyuncu ismi girin")
 
     ret, info = remove_user_from_tournament(discord_id)
 
@@ -175,6 +189,13 @@ async def kick_player(ctx, discord_id):
 
     if ret["removed"]:
         osu_username = info["osu_username"]
+        guild = client.get_guild(402213530599948299)
+        player_role = discord.utils.get(guild.roles, id=693574523324203009)
+        discord_id = discord_id
+        discord_user = discord.utils.get(guild.members, id=discord_id)
+        if player_role in discord_user.roles:
+            await discord_user.add_roles(discord_user, player_role)
+
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
     if ret["disbanded"]:
@@ -185,19 +206,108 @@ async def kick_player(ctx, discord_id):
     return
 
 
-async def create_paged_embed(ctx, data, fixed_fields):
-
+async def create_paged_embed(ctx, data, fixed_fields, called_by):
     page_no = 1
 
     max_item_index = len(data)
-    result_per_page = 5  # Show 5 results per page
+    result_per_page = 16  # Show 16 results per page
     max_page = math.ceil(max_item_index / result_per_page)
 
-    embed = discord.Embed()
+    def get_desc_text(data, page_no, result_per_page, called_by):
+        desc_text = ""
+        show_data = data[(page_no - 1) * result_per_page:page_no * result_per_page]
+        if called_by == "players":
+            for user_no, data_point in enumerate(show_data["users"]):
+                has_team = False
+                user_rank = data_point["statistics"]["pp_rank"]
+                username = data_point["username"]
+                user_discord_id = data_point["discord_id"]
+                for team in data["teams"]:
+                    team_name = team["name"]
+                    p1_discord = team["user1"]
+                    p2_discord = team["user2"]
+                    has_team = True
+                    if user_discord_id == p1_discord or user_discord_id == p2_discord:
+                        desc_text += f"#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank} - `{team_name}`\n"
+                if not has_team:
+                    desc_text += f"**#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank}**\n"
+
+        elif called_by == "teams":
+            for team_no, data_point in enumerate(show_data["teams"]):
+                team_name = data_point["name"]
+                team_p1 = data_point["user1"]
+                team_p2 = data_point["user2"]
+
+                for user in data["users"]:
+                    if team_p1 == user["discord_id"]:
+                        team_p1_uname = user["username"]
+                    if team_p2 == user["discord_id"]:
+                        team_p2_uname = user["username"]
+
+                desc_text += f"#{team_no + 1 + (page_no - 1) * result_per_page}: `{team_name}` - {team_p1_uname} & {team_p2_uname}\n"
+
+        return desc_text
+
+    desc_text = get_desc_text(data, page_no, result_per_page, called_by)
+
+    embed = discord.Embed(description=desc_text, color=tournament_color)
     embed.set_author(name=fixed_fields["author_name"])
     embed.set_thumbnail(url=fixed_fields["thumbnail_url"])
+
     if max_page <= 1:
-        await ctx.send()
+        await ctx.send(embed=embed)
+        return
+    else:
+        embed.set_footer(text="Page {page_no} of {max_page}")
+        msg = await ctx.send(embed=embed)
+        reactmoji = ['⬅', '➡']
+        while True:
+            for react in reactmoji:
+                await msg.add_reaction(react)
+
+            def check_react(reaction, user):
+                if reaction.message.id != msg.id:
+                    return False
+                if user != ctx.message.author:
+                    return False
+                if str(reaction.emoji) not in reactmoji:
+                    return False
+                return True
+
+            try:
+                res, user = await client.wait_for('reaction_add', timeout=30.0, check=check_react)
+            except asyncio.TimeoutError:
+                return await msg.clear_reactions()
+
+            if user != ctx.message.author:
+                pass
+            elif '⬅' in str(res.emoji):
+                page_no -= 1
+                if page_no < 1:
+                    page_no = max_page
+
+                desc_text = get_desc_text(data, page_no, result_per_page, called_by)
+                embed2 = discord.Embed(description=desc_text, color=tournament_color)
+                embed2.set_author(name=fixed_fields["author_name"])
+                embed2.set_thumbnail(url=fixed_fields["thumbnail_url"])
+                embed2.set_footer(text=f"Page {page_no} of {max_page}")
+
+                await msg.clear_reactions()
+                await msg.edit(embed=embed2)
+
+            elif '➡' in str(res.emoji):
+                page_no += 1
+                if page_no > max_page:
+                    page_no = 1
+
+                desc_text = get_desc_text(data, page_no, result_per_page, called_by)
+                embed2 = discord.Embed(description=desc_text, color=tournament_color)
+                embed.set_author(name=fixed_fields["author_name"])
+                embed.set_thumbnail(url=fixed_fields["thumbnail_url"])
+                embed2.set_footer(text=f"Page {page_no} of {max_page}")
+
+                await msg.clear_reactions()
+                await msg.edit(embed=embed2)
 
 
 @client.command(name='players')
@@ -246,15 +356,16 @@ async def show_registered_teams(ctx):
             if team_p2 == user["discord_id"]:
                 team_p2_uname = user["username"]
 
-        desc_text += f"#{team_no+1}: {team_name} - {team_p1_uname} & {team_p2_uname}\n"
+        desc_text += f"#{team_no + 1}: {team_name} - {team_p1_uname} & {team_p2_uname}\n"
 
     embed = discord.Embed(description=f"{desc_text}",
                           color=tournament_color)
     embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
-    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+    embed.set_thumbnail(
+        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
     await ctx.send(embed=embed)
 
-    #await create_paged_embed(ctx, teams, fixed_fields)
+    # await create_paged_embed(ctx, teams, fixed_fields)
 
     return
 
@@ -266,8 +377,8 @@ async def register_tourney(ctx, osu_user1):
 
     osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
-    #if not ctx.message.channel.guild.id == 402213530599948299:
-     #   return
+    # if not ctx.message.channel.guild.id == 402213530599948299:
+    #   return
 
     db = read_tournament_db()
 
@@ -362,14 +473,15 @@ def disband_team(team):
 async def on_ready():
     print(f"Bot Started!!")
     db = read_tournament_db()
+    guild = client.get_guild(402213530599948299)
+    player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
     for user in db["users"]:
         discord_id = user["discord_id"]
-        discord_user = discord.utils.get(client.get_all_members(), id=discord_id)
-        role = discord.utils.get(discord_user.server.roles, name="Oyuncu")
-        if role not in discord_user.roles:
-            await discord_user.add_roles(discord_user, role)
-
+        discord_user = discord.utils.get(guild.members, id=discord_id)
+        if player_role not in discord_user.roles:
+            print(f"Adding {player_role} role to {discord_user}")
+            await discord_user.add_roles(discord_user, player_role)
     return
 
 
