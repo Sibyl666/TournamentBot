@@ -161,14 +161,21 @@ async def register_tourney(ctx, osu_user1):
     user1_info["discord_id"] = ctx.author.id
     user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
     user2_weight = rank_limit - user1_weight
-    teammate_min_rank = float("inf")
-    for rank in range(1, 100000):
-        if get_user_weight(rank) < user2_weight:
-            teammate_min_rank = rank
-            break
 
-    if teammate_min_rank == float("inf"):
-        teammate_min_rank = 0
+    def binary_search(weight):
+        rank_upper = 100000000
+        rank_lower = 1
+        while not rank_upper == rank_lower:
+            rank_mid = (rank_upper+rank_lower)//2
+            temp_weight = get_user_weight(rank_mid)
+            if weight > temp_weight:
+                rank_upper = rank_mid
+            else:
+                rank_lower = rank_mid
+
+        return rank_mid
+
+    teammate_min_rank = binary_search(user2_weight)
 
     db["users"].append(user1_info)
 
