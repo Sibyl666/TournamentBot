@@ -62,20 +62,20 @@ async def create_team(ctx, osu_user2, team_name):
             break
 
     if not user2_found:
-        await ctx.send(f"`{osu_user2}` kayıt olanlar arasında bulunamadı.")
+        await ctx.send(f"{osu_user2} kayıt olanlar arasında bulunamadı.")
         return
 
     for team in db["teams"]:
         user1_id = team["user1"]
         user2_id = team["user2"]
-        team_name = team["name"]
+        team_name_from_db = team["name"]
         if user1_id == ctx.author.id or user2_id == ctx.author.id:
-            await ctx.send(f"{ctx.author.mention} sen zaten `{team_name}` takımındasın!")
+            await ctx.send(f"{ctx.author.mention} sen zaten `{team_name_from_db}` takımındasın!")
             return
 
         if user1_id == user2_discord_id or user2_id == user2_discord_id:
             await ctx.send(
-                f"{osu_user2}, `{team_name}` takımında oyuncu! Takımından ayrılmadan onu takımına alamazsın.")
+                f"{osu_user2}, `{team_name_from_db}` takımında oyuncu! Takımından ayrılmadan onu takımına alamazsın.")
             return
 
     user1_weight = get_user_weight(user1_rank)
@@ -105,40 +105,82 @@ async def remove_user(ctx):
     Komutu kullanan kişiyi turnuvadan çıkarır.
     İçinde bulunduğu takım varsa, bozulur.
     """
+    ret, info = remove_user_from_tournament(ctx.author.id)
+
+    if ret is None:
+        await ctx.send(f"{ctx.author.mention} turnuvaya kayıtlı değilsin...")
+
+    if ret["removed"]:
+        osu_username = info["osu_username"]
+        await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
+
+    if ret["disbanded"]:
+        team_name = info["team_name"]
+        p2_discord = info["p2_discord"]
+        await ctx.send(f"`{team_name}` takımı bozuldu... <@{p2_discord}>")
+
+    return
+
+
+def remove_user_from_tournament(discord_id):
     db = read_tournament_db()
 
-    removed = False
-
+    true_falses = {"removed": False, "disbanded": False}
+    info = {"osu_username": None, "p2_discord": None, "team_name": None}
     for user in db["users"]:
-        if user["discord_id"] == ctx.author.id:
-            uname = user["username"]
-            removed = True
-            await ctx.send(f"`{uname}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
+        if user["discord_id"] == discord_id:
+            info["osu_username"] = user["username"]
+            true_falses["removed"] = True
             db["users"].remove(user)
             break
 
-    if not removed:
-        await ctx.send(f"{ctx.author.mention} turnuvaya kayıtlı değilsin...")
-        return
+    if not true_falses["removed"]:
+        return None, None
 
     for team in db["teams"]:
         u1_discord = team["user1"]["discord_id"]
         u2_discord = team["user2"]["discord_id"]
 
-        if u1_discord == ctx.author.id or u2_discord == ctx.author.id:
+        if u1_discord == discord_id or u2_discord == discord_id:
             disband_team(team)
-            team_name = team["name"]
-            await ctx.send(
-                f"`{team_name}` takımı bozuldu... <@{u2_discord if u1_discord == ctx.author.id else u1_discord}>")
+            info["team_name"] = team["name"]
+            info["p2_discord"] = u2_discord if u1_discord == discord_id else u1_discord
+            true_falses["disbanded"] = True
             break
 
     updated_db = read_tournament_db()
     updated_db["users"] = db["users"]
+    write_tournament_db(updated_db)
 
-    if not removed:
-        await ctx.send(f"{ctx.author.mention} turnuvaya kayıtlı değilsin.")
-    else:
-        write_tournament_db(updated_db)
+    return true_falses, info
+
+
+@client.command(name='kick')
+@commands.has_permissions(administrator=True)
+async def kick_player(ctx, discord_id):
+    """
+    Oyuncuyu turnuvadan atar.
+
+    osu_user2: Atmak istediğiniz oyuncunun nicki
+    """
+    try:
+        discord_id = int(discord_id)
+    except:
+        await ctx.send("Geçerli discord id'si girin")
+
+    ret, info = remove_user_from_tournament(discord_id)
+
+    if ret is None:
+        await ctx.send("Oyuncu bulunamadığı için kickleyemedik...")
+
+    if ret["removed"]:
+        osu_username = info["osu_username"]
+        await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
+
+    if ret["disbanded"]:
+        team_name = info["team_name"]
+        p2_discord = info["p2_discord"]
+        await ctx.send(f"`{team_name}` takımı bozuldu... <@{p2_discord}>")
 
     return
 
@@ -159,7 +201,7 @@ async def create_paged_embed(ctx, data, fixed_fields):
 
 
 @client.command(name='players')
-async def show_registered_teams(ctx):
+async def show_registered_players(ctx):
 
     users = read_tournament_db()["users"]
 
@@ -172,11 +214,12 @@ async def show_registered_teams(ctx):
         username = user["username"]
         desc_text += f"#{user_no} - {username} - #{user_rank}\n"
 
-    embed = discord.Embed(description=f"{desc_text}")
+    embed = discord.Embed(description=f"{desc_text}", color=tournament_color)
     embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
     embed.set_thumbnail(
         url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
     await ctx.send(embed=embed)
+
 
 @client.command(name='teams')
 async def show_registered_teams(ctx):
@@ -184,19 +227,27 @@ async def show_registered_teams(ctx):
     Turnuvaya kayıtlı takımları gösterir
     """
 
-    teams = read_tournament_db()["teams"]
+    db = read_tournament_db()
 
     fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
                     "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
 
     desc_text = ""
-    for team in teams:
+    for team_no, team in enumerate(db["teams"]):
         team_name = team["name"]
         team_p1 = team["user1"]
         team_p2 = team["user2"]
-        desc_text += f"{team_name} - {team_p1} & {team_p2}\n"
 
-    embed = discord.Embed(description=f"{desc_text}")
+        for user in db["users"]:
+            if team_p1 == user["discord_id"]:
+                team_p1_uname = user["username"]
+            if team_p2 == user["discord_id"]:
+                team_p2_uname = user["username"]
+
+        desc_text += f"#{team_no+1}: {team_name} - {team_p1_uname} & {team_p2_uname}\n"
+
+    embed = discord.Embed(description=f"{desc_text}",
+                          color=tournament_color)
     embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
     await ctx.send(embed=embed)
