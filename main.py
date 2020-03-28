@@ -191,8 +191,8 @@ async def register_tourney(ctx, osu_user1):
 
     osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
-    if not ctx.message.channel.guild.id == 402213530599948299:
-        return
+    #if not ctx.message.channel.guild.id == 402213530599948299:
+     #   return
 
     db = read_tournament_db()
 
@@ -221,7 +221,7 @@ async def register_tourney(ctx, osu_user1):
             if weight > temp_weight:
                 rank_upper = rank_mid
             else:
-                rank_lower = rank_mid
+                rank_lower = rank_mid + 1
 
         return rank_mid
 
@@ -281,6 +281,13 @@ def disband_team(team):
         return -1
     write_tournament_db(db)
     return 0
+
+
+@client.event
+async def on_ready():
+    print(f"Bot Started!!")
+    read_tournament_db()
+    return
 
 
 client.run(os.environ["TOKEN"])
