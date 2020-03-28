@@ -215,9 +215,9 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 
     def get_desc_text(data, page_no, result_per_page, called_by):
         desc_text = ""
-        show_data = data[(page_no - 1) * result_per_page:page_no * result_per_page]
         if called_by == "players":
-            for user_no, data_point in enumerate(show_data["users"]):
+            show_data = data["users"][(page_no - 1) * result_per_page:page_no * result_per_page]
+            for user_no, data_point in enumerate(show_data):
                 has_team = False
                 user_rank = data_point["statistics"]["pp_rank"]
                 username = data_point["username"]
@@ -226,14 +226,16 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                     team_name = team["name"]
                     p1_discord = team["user1"]
                     p2_discord = team["user2"]
-                    has_team = True
                     if user_discord_id == p1_discord or user_discord_id == p2_discord:
+                        has_team = True
                         desc_text += f"#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank} - `{team_name}`\n"
+                        break
                 if not has_team:
                     desc_text += f"**#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank}**\n"
 
         elif called_by == "teams":
-            for team_no, data_point in enumerate(show_data["teams"]):
+            show_data = data["teams"][(page_no - 1) * result_per_page:page_no * result_per_page]
+            for team_no, data_point in enumerate(show_data):
                 team_name = data_point["name"]
                 team_p1 = data_point["user1"]
                 team_p2 = data_point["user2"]
@@ -315,22 +317,13 @@ async def show_registered_players(ctx):
     """
         Turnuvaya kayıtlı oyuncuları gösterir.
     """
-    users = read_tournament_db()["users"]
+    data = read_tournament_db()
 
-    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
+    fixed_fields = {"author_name": "112'nin Corona Turnuvası Oyuncu Listesi",
                     "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
 
-    desc_text = ""
-    for user_no, user in enumerate(users):
-        user_rank = user["statistics"]["pp_rank"]
-        username = user["username"]
-        desc_text += f"#{user_no} - {username} - #{user_rank}\n"
-
-    embed = discord.Embed(description=f"{desc_text}", color=tournament_color)
-    embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
-    embed.set_thumbnail(
-        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
-    await ctx.send(embed=embed)
+    await create_paged_embed(ctx, data, fixed_fields, "players")
+    return
 
 
 @client.command(name='teams')
@@ -344,28 +337,7 @@ async def show_registered_teams(ctx):
     fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
                     "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
 
-    desc_text = ""
-    for team_no, team in enumerate(db["teams"]):
-        team_name = team["name"]
-        team_p1 = team["user1"]
-        team_p2 = team["user2"]
-
-        for user in db["users"]:
-            if team_p1 == user["discord_id"]:
-                team_p1_uname = user["username"]
-            if team_p2 == user["discord_id"]:
-                team_p2_uname = user["username"]
-
-        desc_text += f"#{team_no + 1}: {team_name} - {team_p1_uname} & {team_p2_uname}\n"
-
-    embed = discord.Embed(description=f"{desc_text}",
-                          color=tournament_color)
-    embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
-    embed.set_thumbnail(
-        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
-    await ctx.send(embed=embed)
-
-    # await create_paged_embed(ctx, teams, fixed_fields)
+    await create_paged_embed(ctx, db, fixed_fields, "teams")
 
     return
 
