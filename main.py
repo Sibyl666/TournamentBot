@@ -481,7 +481,7 @@ async def on_ready():
         discord_user = discord.utils.get(guild.members, id=discord_id)
         if player_role not in discord_user.roles:
             print(f"Adding {player_role} role to {discord_user}")
-            await discord_user.add_roles(discord_user, player_role)
+            await discord_user.add_roles(player_role)
     return
 
 
