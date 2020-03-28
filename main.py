@@ -50,6 +50,10 @@ async def create_team(ctx, osu_user2, team_name):
                        f"Ex: `{prefix}team @heyronii asdasfazamaz`")
         return
 
+    if user2_discord_id == user1_discord_id:
+        await ctx.send(f"Kendinle takım oluşturamazsın.")
+        return
+
     user2_found = False
     for user in db["users"]:
         if user["discord_id"] == user2_discord_id:
@@ -80,7 +84,7 @@ async def create_team(ctx, osu_user2, team_name):
     if user1_weight + user2_weight > rank_limit:
         await ctx.send(
             f"Takımın toplam değeri sınırın üzerinde kaldığı için katılamazsınız."
-            f"\nTakımınızın toplam değeri: {user1_weight + user2_weight} > {rank_limit}")
+            f"\nTakımınızın toplam değeri: {user1_weight + user2_weight:.0f} > {rank_limit}")
     else:
         new_team = {"name": team_name, "user1": ctx.author.id, "user2": user2_discord_id}
         db["teams"].append(new_team)
@@ -233,7 +237,7 @@ async def register_tourney(ctx, osu_user1):
 
     await ctx.send(f"`{osu_user1}` başarıyla turnuvaya katıldın! Devam edebilmek için bir takım kurman gerekiyor:\n"
                    f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n Ex. `{prefix}team @heyronii Yokediciler`\n"
-                   f"Beraber katılabileceğin takım arkadaşın min {teammate_min_rank:0d} rank olabilir.")
+                   f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
     return
 
 
