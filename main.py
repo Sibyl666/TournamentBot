@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import math
+import discord
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
@@ -9,15 +10,19 @@ prefix = "?"
 
 client = commands.Bot(command_prefix=prefix, case_insensitive=True)
 
+tournament_color = discord.Color.from_rgb(177, 29, 160)
 rank_limit = 13200
+
 
 @client.command(name='team')
 async def create_team(ctx, osu_user2, team_name):
     """
-    :param ctx:
-    :param osu_user2: Komutu kullanan kişinin yanında turnuvaya katılacak olan 2. kişi
-    :param team_name: Takım ismi
-    :return: Verilen takım ismi ile takım oluşturur
+    Verilen takım ismi ve oyuncu ile takım oluşturur.
+
+    osu_user2: Komutu kullanan kişinin yanında turnuvaya katılacak olan 2. kişi
+    team_name: Takımın ismi
+
+    Komutu kullanan kişi otomatik olarak takım lideri seçilecektir.
     """
 
     if len(team_name) > 16:
@@ -93,8 +98,8 @@ def get_user_weight(rank):
 @client.command(name='leave')
 async def remove_user(ctx):
     """
-    :param ctx:
-    :return: Komutu kullanan kişiyi turnuvadan çıkarır
+    Komutu kullanan kişiyi turnuvadan çıkarır.
+    İçinde bulunduğu takım varsa, bozulur.
     """
     db = read_tournament_db()
 
@@ -134,12 +139,57 @@ async def remove_user(ctx):
     return
 
 
+async def create_paged_embed(ctx, data, fixed_fields):
+
+    page_no = 1
+
+    max_item_index = len(data)
+    result_per_page = 5  # Show 5 results per page
+    max_page = math.ceil(max_item_index / result_per_page)
+
+    embed = discord.Embed()
+    embed.set_author(name=fixed_fields["author_name"])
+    embed.set_thumbnail(url=fixed_fields["thumbnail_url"])
+    if max_page <= 1:
+        await ctx.send()
+
+
+
+
+@client.command(name='teams')
+async def show_registered_teams(ctx):
+    """
+    Turnuvaya kayıtlı takımları gösterir
+    """
+
+    teams = read_tournament_db()["teams"]
+
+    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
+                    "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
+
+    desc_text = ""
+    for team in teams:
+        team_name = team["name"]
+        team_p1 = team["user1"]
+        team_p2 = team["user2"]
+        desc_text += f"{team_name} - {team_p1} & {team_p2}\n"
+
+    embed = discord.Embed(description="desc_text")
+    embed.set_author(name="112'nin Corona Turnuvası Takım Listesi")
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+    await ctx.send(embed=embed)
+
+    #await create_paged_embed(ctx, teams, fixed_fields)
+
+    return
+
+
 @client.command(name='register')
 async def register_tourney(ctx, osu_user1):
     """
-    :param ctx:
-    :param osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
-    :return: Turnuvaya katılan kişileri listeye ekler
+    Turnuvaya katılan kişiyi listeye ekler
+
+    osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
     if not ctx.message.channel.guild.id == 402213530599948299:
         return
@@ -166,7 +216,7 @@ async def register_tourney(ctx, osu_user1):
         rank_upper = 100000000
         rank_lower = 1
         while not rank_upper == rank_lower:
-            rank_mid = (rank_upper+rank_lower)//2
+            rank_mid = (rank_upper + rank_lower) // 2
             temp_weight = get_user_weight(rank_mid)
             if weight > temp_weight:
                 rank_upper = rank_mid
