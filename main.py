@@ -424,8 +424,6 @@ async def check_player_rank(ctx, rank=None):
 
 def check_registration(user_discord):
 
-    db = read_tournament_db()
-
     user_discord = str(user_discord)
 
     if user_discord in players_by_discord:
