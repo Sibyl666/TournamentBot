@@ -4,6 +4,7 @@ import requests
 import math
 import discord
 import asyncio
+from oppai import *
 from copy import deepcopy
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -13,7 +14,234 @@ prefix = "?"
 client = commands.Bot(command_prefix=prefix, case_insensitive=True)
 
 tournament_color = discord.Color.from_rgb(177, 29, 160)
+old_maps_filename = "old_maps.tsv"
+mappool_db_file = "beatmaps.json"
+tournament_db_file = "turnuva.json"
+mod_colors = [(217, 217, 217), (255, 229, 153), (234, 153, 153), (180, 167, 214), (182, 215, 168), (241, 194, 50)]
 rank_limit = 13200
+
+
+@client.command(name='poolshow')
+async def mappool_show(ctx, which_pool, mod):
+    mappool_db = read_mappool_db()
+
+    mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
+    which_pool = which_pool.upper()
+    mod = mod.upper()
+    mod_index = mods.index(mod)
+    r, g, b = mod_colors[mod_index]
+    color = discord.Color.from_rgb(r, g, b)
+    desc_text = ""
+    bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
+             bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+
+    author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
+
+    for bmap_id, bmapset in bmaps:
+        bmap = next(item for item in bmapset["beatmaps"] if item["id"] == int(bmap_id))
+        '''
+        cs = bmap["cs"]
+        ar = bmap["ar"]
+        od = bmap["accuracy"]
+        hp = bmap["drain"]
+        '''
+        bpm = bmap["bpm"]
+        length = bmap["hit_length"]
+        star_rating = bmap["difficulty_rating"]
+        '''
+        if mod == "HR":
+            cs = min(10, cs * 1.3)
+            ar = min(10, ar * 1.4)
+            od = min(10, od * 1.4)
+            hp = min(10, hp * 1.4)
+        '''
+        if mod == "DT":
+            bpm = bpm * 1.5
+
+        bmap_url = bmap['url']
+        bmap_name = f"{bmapset['artist']} - {bmapset['title']} [{bmap['version']}]"
+        # embed.add_field(name=f"{bmap_name}", value=f"{bmap_url}", inline=False)
+        desc_text += f"▸[{bmap_name}]({bmap_url})\n" \
+                     f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm} ▸SR: {star_rating}* \n\n"
+    embed = discord.Embed(description=desc_text, color=color)
+    embed.set_thumbnail(
+        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+    embed.set_author(name=author_name)
+    embed.set_image(url="")
+
+    await ctx.send(embed=embed)
+
+    return
+
+
+@client.command(name='mappool')
+@commands.has_role("Mappool")
+async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment=""):
+    """
+    Add, remove or show maps from the mappools
+
+    action: "add", "remove" or "show"
+    map_link: (Optional) Link of the map you want to add or remove
+    which_pool: (Optional) Which week's pool do you want to add this map? (qf, w1, w2)
+    mod: (Optional) Which mod pool is this map going to be added? (nm, hd, hr, dt, fm, tb)
+    comment: (Optional) Comment about the beatmap ("slow finger control, bit of alt"). Should be in quotation marks. Can be empty
+    """
+    if action.lower() == "add":
+        which_pool = which_pool.upper()
+        mod = mod.upper()
+        if map_link is None or mod is None or which_pool is None:
+            await ctx.send("You should add map link, pool and mod to the query.\n"
+                           "Ex. `?mappool add https://osu.ppy.sh/beatmapsets/170942#osu/611679 qf NM`")
+            return
+
+        pools = ["QF", "W1", "W2"]
+        if which_pool not in pools:
+            await ctx.send(f"Mappools can only be QF, W1 or W2.\n"
+                           f"You wanted to add to {which_pool}. There's no pool option for that.")
+            return
+
+        if not (map_link.startswith("http://") or map_link.startswith("https://")):
+            await ctx.send(f"Map link should start with http:// or https://.\n"
+                           f"You linked {map_link}, I don't think it's a valid link.")
+            return
+
+        map_id = map_link.split("/")[-1]
+        try:
+            map_id_int = int(map_id)
+        except:
+            await ctx.send(f"Map link seems wrong. Please check again. \n"
+                           f"You linked {map_link} but I couldn\'t find beatmap id from it.")
+            return
+
+        mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
+
+        if which_pool == "QF":
+            mods = mods[:4]
+
+        if mod not in mods:
+            await ctx.send(f"Mods can only be one of from {mods}.\n"
+                           f"You wanted to select {mod} mod pool, but it does not exist.")
+            return
+
+        old_maps_list = get_old_maps()
+        if map_id in old_maps_list:
+            await ctx.send(f"The map you linked has been used in the previous iterations of this tournament.\n"
+                           f"You linked {map_link}")
+            return
+
+        map_info, ezpp_map = get_map_info(map_id)
+        if mod == "HR":
+            ezpp_set_mods(ezpp_map, MODS_HR)
+        elif mod == "DT":
+            ezpp_set_mods(ezpp_map, MODS_DT)
+        print(ezpp_mods(ezpp_map))
+        stars = ezpp_stars(ezpp_map)
+
+        selected_bmap = None
+        for bmap in map_info["beatmaps"]:
+            if bmap["id"] == map_id_int:
+                selected_bmap = bmap
+                break
+
+        if selected_bmap is None:
+            await ctx.send(f"<@!146746632799649792> something went wrong.\n"
+                           f"Requested command: {prefix}{ctx.command.name} {ctx.args[1:]}")
+            return
+
+        bmap_artist = map_info["artist"]
+        bmap_title = map_info["title"]
+        bmap_creator = map_info["creator"]
+        bmap_cover = map_info["covers"]["cover"]
+        bmap_url = selected_bmap["url"]
+        bmap_version = selected_bmap["version"]
+
+        selected_bmap["difficulty_rating"] = f"{stars:.2f}"
+        map_info["mappool"] = which_pool
+        map_info["modpool"] = mod
+        map_info["added_by"] = ctx.author.name
+        map_info["comment"] = comment
+
+        map_name = f"{bmap_artist} - {bmap_title} [{bmap_version}]"
+
+        mappool_db = read_mappool_db()
+
+        if which_pool == "QF":
+            max_maps = [3, 2, 2, 2]
+        else:
+            max_maps = [5, 3, 3, 3, 3, 1]
+
+        mod_index = mods.index(mod)
+        max_map_in_pool = max_maps[mod_index]
+
+        maps_in_pool = 0
+        for k, v in mappool_db.items():
+            if v["mappool"] == which_pool and v["modpool"] == mod:
+                maps_in_pool += 1
+
+        mappool_db[map_id] = map_info
+        if maps_in_pool > max_map_in_pool:
+            author_name = f"Couldn't add map to {which_pool} Pool - {mod}"
+            title_text = map_name
+            desc_text = "Map couldn't be added to the pool, because pool is full!"
+            bmap_cover = ""
+            footer_text = f"{max_map_in_pool} out of {max_map_in_pool} maps in {which_pool} {mod} pool"
+        else:
+            title_text = map_name
+            author_name = f"Successfully added map to {which_pool} Pool - {mod}"
+            desc_text = ""
+            footer_text = f"{maps_in_pool + 1} out of {max_map_in_pool} maps in {which_pool} {mod} pool"
+            write_mappool_db(mappool_db)
+
+        embed = discord.Embed(title=title_text, description=desc_text, color=tournament_color, url=bmap_url)
+        embed.set_thumbnail(
+            url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+        embed.set_author(name=author_name)
+        embed.set_image(url=bmap_cover)
+        embed.set_footer(text=footer_text)
+
+        await ctx.send(embed=embed)
+
+    elif action.lower() == "remove":
+        if map_link is None:
+            await ctx.send("You should add map link to the query.\n"
+                           "Ex. `?mappool remove https://osu.ppy.sh/beatmapsets/170942#osu/611679`")
+
+        if not (map_link.startswith("http://") or map_link.startswith("https://")):
+            await ctx.send(f"Map link should start with http:// or https://.\n"
+                           f"You linked {map_link}, I don't think it's a valid link.")
+            return
+
+        map_id = map_link.split("/")[-1]
+        try:
+            map_id_int = int(map_id)
+        except:
+            await ctx.send(f"Map link seems wrong. Please check again. \n"
+                           f"You linked {map_link} but I couldn\'t find beatmap id from it.")
+            return
+
+        mappool_db = read_mappool_db()
+
+        try:
+            del mappool_db[map_id]
+        except KeyError as e:
+            await ctx.send(f"The specified beatmap does not exist in the pools.\n"
+                           f"You wanted to remove {map_link}.")
+            return
+
+        write_mappool_db(mappool_db)
+        await ctx.send(f"Successfully deleted {map_link} from pools.")
+
+        return
+
+
+def get_old_maps():
+    with open(old_maps_filename, "r") as f:
+        old_maps = f.read().splitlines()
+
+    old_map_ids = [bmap.split("\t")[7] for bmap in old_maps]
+
+    return old_map_ids
+
 
 @client.command(name='team')
 async def create_team(ctx, osu_user2, team_name):
@@ -119,8 +347,8 @@ async def remove_user(ctx):
 
     return
 
-async def remove_user_role(discord_id):
 
+async def remove_user_role(discord_id):
     guild = client.get_guild(402213530599948299)
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
     discord_user = discord.utils.get(guild.members, id=discord_id)
@@ -131,7 +359,6 @@ async def remove_user_role(discord_id):
 
 
 def remove_user_from_tournament(discord_id):
-
     db = read_tournament_db()
 
     true_falses = {"removed": False, "disbanded": False}
@@ -251,7 +478,8 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 
     embed = discord.Embed(description=desc_text, color=tournament_color)
     embed.set_author(name=fixed_fields["author_name"])
-    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+    embed.set_thumbnail(
+        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
 
     if max_page <= 1:
         await ctx.send(embed=embed)
@@ -288,7 +516,8 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
                 embed2 = discord.Embed(description=desc_text, color=tournament_color)
                 embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+                embed2.set_thumbnail(
+                    url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
                 embed2.set_footer(text=f"Page {page_no} of {max_page}")
 
                 await msg.clear_reactions()
@@ -302,7 +531,8 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
                 embed2 = discord.Embed(description=desc_text, color=tournament_color)
                 embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+                embed2.set_thumbnail(
+                    url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
                 embed2.set_footer(text=f"Page {page_no} of {max_page}")
 
                 await msg.clear_reactions()
@@ -344,7 +574,7 @@ async def register_tourney(ctx, osu_user1):
 
     osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
-    #if not ctx.message.channel.guild.id == 402213530599948299:
+    # if not ctx.message.channel.guild.id == 402213530599948299:
     #    return
 
     db = read_tournament_db()
@@ -426,7 +656,6 @@ async def check_player_rank(ctx, rank=None):
 
 
 def check_registration(user_discord):
-
     user_discord = str(user_discord)
 
     if user_discord in players_by_discord:
@@ -446,8 +675,9 @@ async def get_potential_teammates(ctx):
     if user is not None:
         user_rank = user["statistics"]["pp_rank"]
     else:
-        await ctx.send(f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{prefix}register <osu username>` komutunu kullan.\n"
-                       f"Yardım için `{prefix}help` yazabilirsin.")
+        await ctx.send(
+            f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{prefix}register <osu username>` komutunu kullan.\n"
+            f"Yardım için `{prefix}help` yazabilirsin.")
         return
 
     teammate_min_rank = get_teammate_rank(user_rank)
@@ -490,8 +720,54 @@ def get_user_info(username):
     return user_dict
 
 
+def get_map_info(map_id):
+    r = requests.get(f"https://osu.ppy.sh/b/{map_id}")
+    soup = BeautifulSoup(r.text, 'html.parser')
+    try:
+        json_bmap = soup.find(id="json-beatmapset").string
+    except:
+        raise Exception(f"`{map_id}` id'li mapi osu!'da bulamadım.")
+    bmap_dict = json.loads(json_bmap)
+
+    try:
+        osu_file = requests.get(f"https://bloodcat.com/osu/b/{map_id}")
+    except:
+        raise Exception(f"`{map_id}` bloodcat'te bulunamadı.")
+
+    osu_file_contents = osu_file.content
+
+    ezpp_map = ezpp_new()
+    ezpp_set_autocalc(ezpp_map, 1)
+    ezpp_data_dup(ezpp_map, osu_file_contents.decode('utf-8'), len(osu_file_contents))
+
+    return bmap_dict, ezpp_map
+
+
+def read_mappool_db():
+    global mappool_db_file
+
+    if not os.path.exists(mappool_db_file):
+        with open(mappool_db_file, "w", encoding='utf-8') as f:
+            json.dump({}, f)
+        return {}
+
+    with open(mappool_db_file, "r", encoding='utf-8') as f:
+        db = json.load(f)
+
+    return db
+
+
+def write_mappool_db(db):
+    global mappool_db_file
+
+    with open(mappool_db_file, "w", encoding='utf-8') as f:
+        json.dump(db, f, indent=2)
+
+    return
+
+
 def read_tournament_db():
-    tournament_db_file = "turnuva.json"
+    global tournament_db_file
 
     if not os.path.exists(tournament_db_file):
         with open(tournament_db_file, "w", encoding='utf-8') as f:
@@ -508,9 +784,7 @@ def read_tournament_db():
 
 
 def write_tournament_db(db):
-    global players_by_discord
-
-    tournament_db_file = "turnuva.json"
+    global players_by_discord, tournament_db_file
 
     with open(tournament_db_file, "w", encoding='utf-8') as f:
         json.dump(db, f, indent=2)
@@ -556,6 +830,7 @@ async def on_ready():
             print(f"Adding {player_role} role to {discord_user}")
             await discord_user.add_roles(player_role)
     return
+
 
 db = read_tournament_db()
 players_by_discord = {}
