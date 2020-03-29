@@ -39,14 +39,16 @@ async def create_team(ctx, osu_user2, team_name):
         await ctx.send(f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{prefix}register`")
         return
 
-    user2_discord_id = osu_user2[3:-1]
     print(f"?team {osu_user2} {team_name}")
-    try:
-        user2_discord_id = int(user2_discord_id)
-    except:
+    if osu_user2.startswith("<@!"):
+        user2_discord_id = osu_user2[3:-1]
+    elif osu_user2.startswith("<@"):
+        user2_discord_id = osu_user2[2:-1]
+    else:
         await ctx.send(f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n"
                        f"Ex: `{prefix}team @heyronii asdasfazamaz`")
         return
+    user2_discord_id = int(user2_discord_id)
 
     if user2_discord_id == ctx.author.id:
         await ctx.send(f"Kendinle takım oluşturamazsın.")
