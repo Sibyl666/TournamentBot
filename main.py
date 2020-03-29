@@ -14,7 +14,6 @@ client = commands.Bot(command_prefix=prefix, case_insensitive=True)
 tournament_color = discord.Color.from_rgb(177, 29, 160)
 rank_limit = 13200
 
-
 @client.command(name='team')
 async def create_team(ctx, osu_user2, team_name):
     """
@@ -118,7 +117,7 @@ async def remove_user(ctx):
         discord_id = ctx.author.id
         discord_user = discord.utils.get(guild.members, id=discord_id)
         if player_role in discord_user.roles:
-            await discord_user.remove_roles(discord_user, player_role)
+            await discord_user.remove_roles(player_role)
 
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
@@ -194,7 +193,7 @@ async def kick_player(ctx, osu_username):
         discord_id = discord_id
         discord_user = discord.utils.get(guild.members, id=discord_id)
         if player_role in discord_user.roles:
-            await discord_user.remove_roles(discord_user, player_role)
+            await discord_user.remove_roles(player_role)
 
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
@@ -380,6 +379,11 @@ async def register_tourney(ctx, osu_user1):
 
     write_tournament_db(db)
 
+    guild = client.get_guild(402213530599948299)
+    player_role = discord.utils.get(guild.roles, id=693574523324203009)
+    if player_role not in ctx.author.roles:
+        await ctx.author.add_roles(player_role)
+
     await ctx.send(f"`{osu_user1}` başarıyla turnuvaya katıldın! Devam edebilmek için bir takım kurman gerekiyor:\n"
                    f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n Ex. `{prefix}team @heyronii Yokediciler`\n"
                    f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
@@ -485,6 +489,12 @@ async def on_ready():
     guild = client.get_guild(402213530599948299)
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
+    for member in guild.members:
+        if player_role in member:
+            id = str(member.id)
+            if id in players_by_discord:
+                await member.remove_roles(player_role)
+
     for user in db["users"]:
         discord_id = user["discord_id"]
         discord_user = discord.utils.get(guild.members, id=discord_id)
@@ -493,5 +503,10 @@ async def on_ready():
             await discord_user.add_roles(player_role)
     return
 
+players_by_discord = {}
+
+for player in read_tournament_db()["users"]:
+    discord_id = str(player["discord_id"])
+    players_by_discord[discord_id] = player
 
 client.run(os.environ["TOKEN"])
