@@ -56,6 +56,7 @@ async def mappool_show(ctx, which_pool, mod):
             hp = min(10, hp * 1.4)
         '''
         if mod == "DT":
+            length = length // 1.5
             bpm = bpm * 1.5
 
         bmap_url = bmap['url']
