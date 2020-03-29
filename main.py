@@ -4,6 +4,7 @@ import requests
 import math
 import discord
 import asyncio
+from copy import deepcopy
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
@@ -31,14 +32,10 @@ async def create_team(ctx, osu_user2, team_name):
 
     db = read_tournament_db()
 
-    user1_discord_id = ctx.author.id
-    user1_found = False
-    for user in db["users"]:
-        if user["discord_id"] == user1_discord_id:
-            user1_found = True
-            user1_rank = user["statistics"]["pp_rank"]
-
-    if not user1_found:
+    user1 = check_registration(ctx.author.id)
+    if user1 is not None:
+        user1_rank = user1["statistics"]["pp_rank"]
+    else:
         await ctx.send(f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{prefix}register`")
         return
 
@@ -50,18 +47,15 @@ async def create_team(ctx, osu_user2, team_name):
                        f"Ex: `{prefix}team @heyronii asdasfazamaz`")
         return
 
-    if user2_discord_id == user1_discord_id:
+    if user2_discord_id == ctx.author.id:
         await ctx.send(f"Kendinle takım oluşturamazsın.")
         return
 
-    user2_found = False
-    for user in db["users"]:
-        if user["discord_id"] == user2_discord_id:
-            user2_rank = user["statistics"]["pp_rank"]
-            user2_found = True
-            break
+    user2 = check_registration(user2_discord_id)
 
-    if not user2_found:
+    if user2 is not None:
+        user2_rank = user2["statistics"]["pp_rank"]
+    else:
         await ctx.send(f"{osu_user2} kayıt olanlar arasında bulunamadı.")
         return
 
@@ -112,13 +106,7 @@ async def remove_user(ctx):
 
     if ret["removed"]:
         osu_username = info["osu_username"]
-        guild = client.get_guild(402213530599948299)
-        player_role = discord.utils.get(guild.roles, id=693574523324203009)
-        discord_id = ctx.author.id
-        discord_user = discord.utils.get(guild.members, id=discord_id)
-        if player_role in discord_user.roles:
-            await discord_user.remove_roles(player_role)
-
+        await remove_user_role(ctx.author.id)
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
     if ret["disbanded"]:
@@ -128,20 +116,29 @@ async def remove_user(ctx):
 
     return
 
+async def remove_user_role(discord_id):
+
+    guild = client.get_guild(402213530599948299)
+    player_role = discord.utils.get(guild.roles, id=693574523324203009)
+    discord_user = discord.utils.get(guild.members, id=discord_id)
+    if player_role in discord_user.roles:
+        await discord_user.remove_roles(player_role)
+
+    return
+
 
 def remove_user_from_tournament(discord_id):
+
     db = read_tournament_db()
 
     true_falses = {"removed": False, "disbanded": False}
     info = {"osu_username": None, "p2_discord": None, "team_name": None}
-    for user in db["users"]:
-        if user["discord_id"] == discord_id:
-            info["osu_username"] = user["username"]
-            true_falses["removed"] = True
-            db["users"].remove(user)
-            break
-
-    if not true_falses["removed"]:
+    user = check_registration(discord_id)
+    if user is not None:
+        info["osu_username"] = user["username"]
+        true_falses["removed"] = True
+        db["users"].remove(user)
+    else:
         return None, None
 
     for team in db["teams"]:
@@ -188,13 +185,7 @@ async def kick_player(ctx, osu_username):
 
     if ret["removed"]:
         osu_username = info["osu_username"]
-        guild = client.get_guild(402213530599948299)
-        player_role = discord.utils.get(guild.roles, id=693574523324203009)
-        discord_id = discord_id
-        discord_user = discord.utils.get(guild.members, id=discord_id)
-        if player_role in discord_user.roles:
-            await discord_user.remove_roles(player_role)
-
+        await remove_user_role(discord_id)
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
     if ret["disbanded"]:
@@ -257,7 +248,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 
     embed = discord.Embed(description=desc_text, color=tournament_color)
     embed.set_author(name=fixed_fields["author_name"])
-    embed.set_thumbnail(url=fixed_fields["thumbnail_url"])
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
 
     if max_page <= 1:
         await ctx.send(embed=embed)
@@ -294,7 +285,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
                 embed2 = discord.Embed(description=desc_text, color=tournament_color)
                 embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(url=fixed_fields["thumbnail_url"])
+                embed2.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
                 embed2.set_footer(text=f"Page {page_no} of {max_page}")
 
                 await msg.clear_reactions()
@@ -308,7 +299,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
                 embed2 = discord.Embed(description=desc_text, color=tournament_color)
                 embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(url=fixed_fields["thumbnail_url"])
+                embed2.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
                 embed2.set_footer(text=f"Page {page_no} of {max_page}")
 
                 await msg.clear_reactions()
@@ -322,8 +313,7 @@ async def show_registered_players(ctx):
     """
     data = read_tournament_db()
 
-    fixed_fields = {"author_name": "112'nin Corona Turnuvası Oyuncu Listesi",
-                    "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
+    fixed_fields = {"author_name": "112'nin Corona Turnuvası Oyuncu Listesi"}
 
     await create_paged_embed(ctx, data, fixed_fields, "players")
     return
@@ -337,8 +327,7 @@ async def show_registered_teams(ctx):
 
     db = read_tournament_db()
 
-    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi",
-                    "thumbnail_url": "https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png"}
+    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi"}
 
     await create_paged_embed(ctx, db, fixed_fields, "teams")
 
@@ -352,8 +341,8 @@ async def register_tourney(ctx, osu_user1):
 
     osu_user1: Turnuvaya katılacak kişinin osu! nicki veya id'si
     """
-    # if not ctx.message.channel.guild.id == 402213530599948299:
-    #   return
+    #if not ctx.message.channel.guild.id == 402213530599948299:
+    #    return
 
     db = read_tournament_db()
 
@@ -415,31 +404,77 @@ async def check_player_rank(ctx, rank=None):
     if rank is not None:
         try:
             p1_rank = int(rank)
+            teammate_min_rank = get_teammate_rank(p1_rank)
         except:
             await ctx.send(f"Usage: {prefix}rankcheck <optional: rank>")
             return
-
-    user_found = False
-    for user in db["users"]:
-        if user["discord_id"] == ctx.author.id:
-            user1_info = user
-            user_found = True
-            break
-
-    if not user_found:
-        await ctx.send(f"Turnuvaya kayıtlı değilsin...")
-        return
-
-    if rank is not None:
-        user1_weight = get_user_weight(p1_rank)
     else:
-        user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
+        user = check_registration(ctx.author.id)
+        if user is not None:
+            user1_info = user
+        else:
+            await ctx.send(f"Turnuvaya kayıtlı değilsin...")
+            return
 
-    user2_weight = rank_limit - user1_weight
-    teammate_min_rank = binary_search(user2_weight)
+        teammate_min_rank = get_teammate_rank(user1_info["statistics"]["pp_rank"])
 
     await ctx.send(f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
     return
+
+
+def check_registration(user_discord):
+
+    db = read_tournament_db()
+
+    user_discord = str(user_discord)
+
+    if user_discord in players_by_discord:
+        user = players_by_discord[user_discord]
+        return user
+    else:
+        return None
+
+
+@client.command(name='teammate')
+async def get_potential_teammates(ctx):
+    """
+    Senin rankına uygun olabilecek takım arkadaşlarını gösterir.
+    """
+
+    user = check_registration(ctx.author.id)
+    if user is not None:
+        user_rank = user["statistics"]["pp_rank"]
+    else:
+        await ctx.send(f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{prefix}register <osu username>` komutunu kullan.\n"
+                       f"Yardım için `{prefix}help` yazabilirsin.")
+        return
+
+    teammate_min_rank = get_teammate_rank(user_rank)
+
+    db = read_tournament_db()
+    potential_teammates = deepcopy(db)
+
+    for user in db["users"]:
+        in_team = False
+        for team in db["teams"]:
+            p1_id = team["user1"]
+            p2_id = team["user2"]
+            if p1_id == user["discord_id"] or p2_id == user["discord_id"]:
+                in_team = True
+
+        if in_team or teammate_min_rank > user["statistics"]["pp_rank"]:
+            potential_teammates["users"].remove(user)
+
+    fixed_fields = {"author_name": "Sana uygun takım arkadaşları listesi"}
+
+    await create_paged_embed(ctx, potential_teammates, fixed_fields, 'players')
+    return
+
+
+def get_teammate_rank(rank):
+    user1_weight = get_user_weight(rank)
+    user2_weight = rank_limit - user1_weight
+    return binary_search(user2_weight)
 
 
 def get_user_info(username):
@@ -472,6 +507,8 @@ def read_tournament_db():
 
 
 def write_tournament_db(db):
+    global players_by_discord
+
     tournament_db_file = "turnuva.json"
 
     with open(tournament_db_file, "w", encoding='utf-8') as f:
