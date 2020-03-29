@@ -40,6 +40,7 @@ async def create_team(ctx, osu_user2, team_name):
         return
 
     user2_discord_id = osu_user2[3:-1]
+    print(f"?team {osu_user2} {team_name}")
     try:
         user2_discord_id = int(user2_discord_id)
     except:
