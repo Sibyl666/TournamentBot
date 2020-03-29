@@ -406,6 +406,10 @@ def binary_search(weight):
 
 @client.command(name='rankcheck')
 async def check_player_rank(ctx, rank=None):
+    """
+    Katılabileceğiniz takım arkadaşınızın maximum rankını gösterir
+    rank: Optional - Rank aralığını öğrenmek istediğiniz kişinin rankı
+    """
     db = read_tournament_db()
 
     if rank is not None:
@@ -413,6 +417,7 @@ async def check_player_rank(ctx, rank=None):
             p1_rank = int(rank)
         except:
             await ctx.send(f"Usage: {prefix}rankcheck <optional: rank>")
+            return
 
     user_found = False
     for user in db["users"]:
@@ -429,6 +434,7 @@ async def check_player_rank(ctx, rank=None):
         user1_weight = get_user_weight(p1_rank)
     else:
         user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
+
     user2_weight = rank_limit - user1_weight
     teammate_min_rank = binary_search(user2_weight)
 
