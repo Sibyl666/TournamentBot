@@ -490,7 +490,7 @@ async def on_ready():
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
     for member in guild.members:
-        if player_role in member:
+        if player_role in member.roles:
             id = str(member.id)
             if id in players_by_discord:
                 print(f"Removing {player_role} role from {member}")
