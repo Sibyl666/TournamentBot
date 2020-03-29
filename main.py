@@ -118,7 +118,7 @@ async def remove_user(ctx):
         discord_id = ctx.author.id
         discord_user = discord.utils.get(guild.members, id=discord_id)
         if player_role in discord_user.roles:
-            await discord_user.add_roles(discord_user, player_role)
+            await discord_user.remove_roles(discord_user, player_role)
 
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
@@ -194,7 +194,7 @@ async def kick_player(ctx, osu_username):
         discord_id = discord_id
         discord_user = discord.utils.get(guild.members, id=discord_id)
         if player_role in discord_user.roles:
-            await discord_user.add_roles(discord_user, player_role)
+            await discord_user.remove_roles(discord_user, player_role)
 
         await ctx.send(f"`{osu_username}` turnuvadan ayrıldı, tekrar görüşmek üzere.")
 
