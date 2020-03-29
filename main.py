@@ -469,6 +469,13 @@ def write_tournament_db(db):
     with open(tournament_db_file, "w", encoding='utf-8') as f:
         json.dump(db, f, indent=2)
 
+    players_by_discord = {}
+    db["users"].sort(key=lambda e: e['statistics']['pp_rank'])
+
+    for player in db["users"]:
+        discord_id = str(player["discord_id"])
+        players_by_discord[discord_id] = player
+
     return
 
 
@@ -504,9 +511,11 @@ async def on_ready():
             await discord_user.add_roles(player_role)
     return
 
+db = read_tournament_db()
 players_by_discord = {}
+db["users"].sort(key=lambda e: e['statistics']['pp_rank'])
 
-for player in read_tournament_db()["users"]:
+for player in db["users"]:
     discord_id = str(player["discord_id"])
     players_by_discord[discord_id] = player
 
