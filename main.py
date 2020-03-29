@@ -466,6 +466,8 @@ def read_tournament_db():
     with open(tournament_db_file, "r", encoding='utf-8') as f:
         db = json.load(f)
 
+    db["users"].sort(key=lambda e: e['statistics']['pp_rank'])
+
     return db
 
 
@@ -519,7 +521,6 @@ async def on_ready():
 
 db = read_tournament_db()
 players_by_discord = {}
-db["users"].sort(key=lambda e: e['statistics']['pp_rank'])
 
 for player in db["users"]:
     discord_id = str(player["discord_id"])
