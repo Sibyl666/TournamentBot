@@ -169,7 +169,7 @@ async def kick_player(ctx, osu_username):
     """
     Oyuncuyu turnuvadan atar.
 
-    osu_user2: Atmak istediğiniz oyuncunun nicki
+    osu_username: Atmak istediğiniz oyuncunun osu! nicki
     """
     discord_id = "sdfgadfg"
     db = read_tournament_db()
@@ -319,7 +319,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 @client.command(name='players')
 async def show_registered_players(ctx):
     """
-        Turnuvaya kayıtlı oyuncuları gösterir.
+    Turnuvaya kayıtlı oyuncuları gösterir.
     """
     data = read_tournament_db()
 
@@ -374,19 +374,6 @@ async def register_tourney(ctx, osu_user1):
     user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
     user2_weight = rank_limit - user1_weight
 
-    def binary_search(weight):
-        rank_upper = 100000000
-        rank_lower = 1
-        while not rank_upper == rank_lower:
-            rank_mid = (rank_upper + rank_lower) // 2
-            temp_weight = get_user_weight(rank_mid)
-            if weight > temp_weight:
-                rank_upper = rank_mid
-            else:
-                rank_lower = rank_mid + 1
-
-        return rank_mid
-
     teammate_min_rank = binary_search(user2_weight)
 
     db["users"].append(user1_info)
@@ -396,6 +383,43 @@ async def register_tourney(ctx, osu_user1):
     await ctx.send(f"`{osu_user1}` başarıyla turnuvaya katıldın! Devam edebilmek için bir takım kurman gerekiyor:\n"
                    f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n Ex. `{prefix}team @heyronii Yokediciler`\n"
                    f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
+    return
+
+
+def binary_search(weight):
+    rank_upper = 100000000
+    rank_lower = 1
+    while not rank_upper == rank_lower:
+        rank_mid = (rank_upper + rank_lower) // 2
+        temp_weight = get_user_weight(rank_mid)
+        if weight > temp_weight:
+            rank_upper = rank_mid
+        else:
+            rank_lower = rank_mid + 1
+
+    return rank_mid
+
+
+@client.command(name='rankcheck')
+async def check_player_rank(ctx):
+    db = read_tournament_db()
+
+    user_found = False
+    for user in db["users"]:
+        if user["discord_id"] == ctx.author.id:
+            user1_info = user
+            user_found = True
+            break
+
+    if not user_found:
+        await ctx.send(f"Turnuvaya kayıtlı değilsin...")
+        return
+
+    user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
+    user2_weight = rank_limit - user1_weight
+    teammate_min_rank = binary_search(user2_weight)
+
+    await ctx.send(f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
     return
 
 
