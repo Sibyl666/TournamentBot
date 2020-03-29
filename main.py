@@ -493,6 +493,7 @@ async def on_ready():
         if player_role in member:
             id = str(member.id)
             if id in players_by_discord:
+                print(f"Removing {player_role} role from {member}")
                 await member.remove_roles(player_role)
 
     for user in db["users"]:
