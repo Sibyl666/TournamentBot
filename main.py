@@ -103,7 +103,7 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
 
         if not (map_link.startswith("http://") or map_link.startswith("https://")):
             await ctx.send(f"Map link should start with http:// or https://.\n"
-                           f"You linked {map_link}, I don't think it's a valid link.")
+                           f"You linked <{map_link}>, I don't think it's a valid link.")
             return
 
         map_id = map_link.split("/")[-1]
@@ -111,7 +111,7 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
             map_id_int = int(map_id)
         except:
             await ctx.send(f"Map link seems wrong. Please check again. \n"
-                           f"You linked {map_link} but I couldn\'t find beatmap id from it.")
+                           f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
             return
 
         mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
@@ -127,7 +127,7 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
         old_maps_list = get_old_maps()
         if map_id in old_maps_list:
             await ctx.send(f"The map you linked has been used in the previous iterations of this tournament.\n"
-                           f"You linked {map_link}")
+                           f"You linked <{map_link}>")
             return
 
         map_info, ezpp_map = get_map_info(map_id)
@@ -209,7 +209,7 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
 
         if not (map_link.startswith("http://") or map_link.startswith("https://")):
             await ctx.send(f"Map link should start with http:// or https://.\n"
-                           f"You linked {map_link}, I don't think it's a valid link.")
+                           f"You linked <{map_link}>, I don't think it's a valid link.")
             return
 
         map_id = map_link.split("/")[-1]
@@ -217,7 +217,7 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
             map_id_int = int(map_id)
         except:
             await ctx.send(f"Map link seems wrong. Please check again. \n"
-                           f"You linked {map_link} but I couldn\'t find beatmap id from it.")
+                           f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
             return
 
         mappool_db = read_mappool_db()
@@ -226,11 +226,11 @@ async def mappool(ctx, action, map_link=None, which_pool=None, mod=None, comment
             del mappool_db[map_id]
         except KeyError as e:
             await ctx.send(f"The specified beatmap does not exist in the pools.\n"
-                           f"You wanted to remove {map_link}.")
+                           f"You wanted to remove <{map_link}>.")
             return
 
         write_mappool_db(mappool_db)
-        await ctx.send(f"Successfully deleted {map_link} from pools.")
+        await ctx.send(f"Successfully deleted <{map_link}> from pools.")
 
         return
 
