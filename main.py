@@ -20,6 +20,16 @@ tournament_db_file = "turnuva.json"
 mod_colors = [(217, 217, 217), (255, 229, 153), (234, 153, 153), (180, 167, 214), (182, 215, 168), (241, 194, 50)]
 rank_limit = 13200
 
+@client.command(name="ping")
+async def mappool_show(ctx, player):
+    db = read_tournament_db()
+
+    for user in db["users"]:
+        if player == user["username"]:
+            discord_user = discord.utils.get(ctx.guild.members, user["discord_id"])
+            await ctx.send(discord_user.mention)
+    
+    
 
 @client.command(name='poolshow')
 async def mappool_show(ctx, which_pool, mod):
