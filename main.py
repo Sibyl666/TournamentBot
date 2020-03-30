@@ -26,8 +26,9 @@ async def mappool_show(ctx, player):
 
     for user in db["users"]:
         if player == user["username"]:
-            discord_user = discord.utils.get(ctx.guild.members, user["discord_id"])
+            discord_user = discord.utils.get(ctx.guild.members, id = user["discord_id"])
             await ctx.send(discord_user.mention)
+            return
     
     
 
