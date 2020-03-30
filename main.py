@@ -35,8 +35,22 @@ async def ping(ctx, player):
             discord_user = discord.utils.get(ctx.guild.members, id = user["discord_id"])
             await ctx.send(discord_user.mention)
             return
-    
-    
+
+@client.command(name="poolannounce")
+@commands.has_permissions(administrator=True)
+async def announce_mappool(ctx, which_pool):
+    channel = client.get_channel(693814385260494918)
+    mappool_db = read_mappool_db()
+
+    mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
+    which_pool = which_pool.upper()
+    if which_pool == "QF":
+        mods = mods[:4]
+    for mod in mods:
+        bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
+                 bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+
+        await show_single_mod_pool(channel, bmaps, which_pool, mod)
 
 @client.command(name='poolshow')
 @commands.has_role("Mappool")
