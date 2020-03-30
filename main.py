@@ -33,6 +33,7 @@ async def ping(ctx, player):
     
 
 @client.command(name='poolshow')
+@commands.has_role("Mappool")
 async def mappool_show(ctx, which_pool, mod):
     mappool_db = read_mappool_db()
 
