@@ -21,7 +21,7 @@ mod_colors = [(217, 217, 217), (255, 229, 153), (234, 153, 153), (180, 167, 214)
 rank_limit = 13200
 
 @client.command(name="ping")
-async def mappool_show(ctx, player):
+async def ping(ctx, player):
     db = read_tournament_db()
 
     for user in db["users"]:
