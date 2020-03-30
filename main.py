@@ -17,7 +17,13 @@ tournament_color = discord.Color.from_rgb(177, 29, 160)
 old_maps_filename = "old_maps.tsv"
 mappool_db_file = "beatmaps.json"
 tournament_db_file = "turnuva.json"
-mod_colors = [(217, 217, 217), (255, 229, 153), (234, 153, 153), (180, 167, 214), (182, 215, 168), (241, 194, 50)]
+mod_colors = {"NM": (217, 217, 217), "HD": (255, 229, 153), "HR": (234, 153, 153), "DT": (180, 167, 214), "FM": (182, 215, 168), "TB": (241, 194, 50)}
+mod_icons = {"NM": "https://hey.s-ul.eu/c4QRqJD0.png",
+             "HD": "https://hey.s-ul.eu/OUnYqa19.png",
+             "HR": "https://hey.s-ul.eu/46z1yt5h.png",
+             "DT": "https://hey.s-ul.eu/oMFybwVu.png",
+             "FM": "https://hey.s-ul.eu/RVu5RAsk.png",
+             "TB": "https://hey.s-ul.eu/l44yzxS6.png"}
 rank_limit = 13200
 
 @client.command(name="ping")
@@ -33,54 +39,63 @@ async def ping(ctx, player):
     
 
 @client.command(name='poolshow')
-async def mappool_show(ctx, which_pool, mod):
+@commands.has_role("Mappool")
+async def mappool_show(ctx, which_pool, mod=None):
+    """
+    Shows the selected pool
+    which_pool: Must be one of [QF, W1, W2]
+    mod: (Optional) Can be one of [NM, HD, HR, DT, FM, TB], if not given, bot will display all the maps in the pool
+     """
     mappool_db = read_mappool_db()
 
     mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
     which_pool = which_pool.upper()
-    mod = mod.upper()
-    mod_index = mods.index(mod)
-    r, g, b = mod_colors[mod_index]
+    show_all = False
+    if mod is None:
+        show_all = True
+    else:
+        mod = mod.upper()
+
+    if show_all:
+        if which_pool == "QF":
+            mods = mods[:4]
+        for mod in mods:
+            bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
+                 bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+
+            await show_single_mod_pool(ctx, bmaps, which_pool, mod)
+    else:
+        bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
+                 bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+        await show_single_mod_pool(ctx, bmaps, which_pool, mod)
+
+    return
+
+
+async def show_single_mod_pool(ctx, bmaps, which_pool, mod):
+
+    r, g, b = mod_colors[mod]
     color = discord.Color.from_rgb(r, g, b)
     desc_text = ""
-    bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
-             bmap["mappool"] == which_pool and bmap["modpool"] == mod]
-
-    author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
-
     for bmap_id, bmapset in bmaps:
         bmap = next(item for item in bmapset["beatmaps"] if item["id"] == int(bmap_id))
-        '''
-        cs = bmap["cs"]
-        ar = bmap["ar"]
-        od = bmap["accuracy"]
-        hp = bmap["drain"]
-        '''
         bpm = bmap["bpm"]
         length = bmap["hit_length"]
         star_rating = bmap["difficulty_rating"]
-        '''
-        if mod == "HR":
-            cs = min(10, cs * 1.3)
-            ar = min(10, ar * 1.4)
-            od = min(10, od * 1.4)
-            hp = min(10, hp * 1.4)
-        '''
         if mod == "DT":
             length = length // 1.5
             bpm = bpm * 1.5
 
         bmap_url = bmap['url']
         bmap_name = f"{bmapset['artist']} - {bmapset['title']} [{bmap['version']}]"
-        # embed.add_field(name=f"{bmap_name}", value=f"{bmap_url}", inline=False)
         desc_text += f"▸[{bmap_name}]({bmap_url})\n" \
                      f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm} ▸SR: {star_rating}* \n\n"
+
+    author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
     embed = discord.Embed(description=desc_text, color=color)
     embed.set_thumbnail(
-        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+        url=mod_icons[mod])
     embed.set_author(name=author_name)
-    embed.set_image(url="")
-
     await ctx.send(embed=embed)
 
     return
