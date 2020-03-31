@@ -5,6 +5,8 @@ from copy import deepcopy
 from discord.ext import commands
 
 from database import read_tournament_db, get_settings
+from rank_calculations import get_teammate_rank
+from registration_check import check_registration
 
 settings = get_settings()
 
@@ -187,7 +189,7 @@ class Paged_Embed(commands.Cog):
             if in_team or teammate_min_rank > user["statistics"]["pp_rank"]:
                 potential_teammates["users"].remove(user)
 
-        desc_lines = get_teams_desc(potential_teammates)
+        desc_lines = get_player_desc(potential_teammates)
         fixed_fields = {"author_name": "Sana uygun takım arkadaşları listesi"}
 
         await self.send_and_control_pages(ctx, desc_lines, fixed_fields,)

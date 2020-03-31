@@ -1,13 +1,5 @@
 import os
 import json
-import requests
-import math
-import discord
-import asyncio
-from copy import deepcopy
-from discord.ext import commands
-from bs4 import BeautifulSoup
-
 
 mappool_db_file = "beatmaps.json"
 old_maps_filename = "old_maps.tsv"

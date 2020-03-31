@@ -1,13 +1,9 @@
-import os
-import json
+
 import requests
-import math
 import discord
 import asyncio
 from oppai import ezpp_mods, ezpp_set_mods, ezpp_stars, MODS_HR, MODS_DT
-from copy import deepcopy
 from discord.ext import commands
-from bs4 import BeautifulSoup
 
 from database import read_mappool_db, write_mappool_db, get_old_maps, get_settings
 from requester import get_map_info
