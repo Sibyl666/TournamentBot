@@ -9,8 +9,7 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 
 from database import read_tournament_db, write_tournament_db , get_settings
-from requester import get_user_info
-from registration_check import check_registration, get_players_by_discord
+from registration_check import  get_players_by_discord
 
 settings = get_settings()
 

@@ -1,6 +1,6 @@
 import math
 
-from database import read_tournament_db, write_tournament_db , get_settings
+from database import get_settings
 from requester import get_user_info
 
 settings = get_settings()
