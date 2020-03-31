@@ -1,12 +1,7 @@
 import os
-import json
-import requests
-import math
 import discord
 import asyncio
-from copy import deepcopy
 from discord.ext import commands
-from bs4 import BeautifulSoup
 
 from database import read_tournament_db, write_tournament_db , get_settings
 from registration_check import  get_players_by_discord
