@@ -9,19 +9,10 @@ from copy import deepcopy
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
-from database import read_mappool_db, write_mappool_db, get_old_maps
+from database import read_mappool_db, write_mappool_db, get_old_maps, get_settings
 from requester import get_map_info
 
-prefix = "?"
-tournament_color = discord.Color.from_rgb(177, 29, 160)
-mod_colors = {"NM": (217, 217, 217), "HD": (255, 229, 153), "HR": (234, 153, 153), "DT": (180, 167, 214), "FM": (182, 215, 168), "TB": (241, 194, 50)}
-mod_icons = {"NM": "https://hey.s-ul.eu/c4QRqJD0.png",
-             "HD": "https://hey.s-ul.eu/OUnYqa19.png",
-             "HR": "https://hey.s-ul.eu/46z1yt5h.png",
-             "DT": "https://hey.s-ul.eu/oMFybwVu.png",
-             "FM": "https://hey.s-ul.eu/RVu5RAsk.png",
-             "TB": "https://hey.s-ul.eu/l44yzxS6.png"}
-
+settings = get_settings()
 
 class Mappool(commands.Cog):
 
@@ -81,8 +72,7 @@ class Mappool(commands.Cog):
 
     async def show_single_mod_pool(self,ctx, bmaps, which_pool, mod):
 
-        r, g, b = mod_colors[mod]
-        color = discord.Color.from_rgb(r, g, b)
+        color = discord.Color.from_rgb(*settings["mod_colors"][mod])
         desc_text = ""
         for bmap_id, bmapset in bmaps:
             bmap = next(item for item in bmapset["beatmaps"] if item["id"] == int(bmap_id))
@@ -101,7 +91,7 @@ class Mappool(commands.Cog):
         author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
         embed = discord.Embed(description=desc_text, color=color)
         embed.set_thumbnail(
-            url=mod_icons[mod])
+            url=settings["mod_icons"][mod])
         embed.set_author(name=author_name)
         await ctx.send(embed=embed)
 
@@ -114,7 +104,7 @@ class Mappool(commands.Cog):
         """
         Add, remove or show maps from the mappools
 
-        action: "add", "remove" or "show"
+        action: "add", "remove"
         map_link: (Optional) Link of the map you want to add or remove
         which_pool: (Optional) Which week's pool do you want to add this map? (qf, w1, w2)
         mod: (Optional) Which mod pool is this map going to be added? (nm, hd, hr, dt, fm, tb)
@@ -179,7 +169,7 @@ class Mappool(commands.Cog):
 
             if selected_bmap is None:
                 await ctx.send(f"<@!146746632799649792> something went wrong.\n"
-                            f"Requested command: {prefix}{ctx.command.name} {ctx.args[1:]}")
+                            f"Requested command: {settings['prefix']}{ctx.command.name} {ctx.args[1:]}")
                 return
 
             bmap_artist = map_info["artist"]
@@ -226,7 +216,7 @@ class Mappool(commands.Cog):
                 footer_text = f"{maps_in_pool + 1} out of {max_map_in_pool} maps in {which_pool} {mod} pool"
                 write_mappool_db(mappool_db)
 
-            embed = discord.Embed(title=title_text, description=desc_text, color=tournament_color, url=bmap_url)
+            embed = discord.Embed(title=title_text, description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]), url=bmap_url)
             embed.set_thumbnail(
                 url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
             embed.set_author(name=author_name)

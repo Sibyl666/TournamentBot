@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 mappool_db_file = "beatmaps.json"
 old_maps_filename = "old_maps.tsv"
 tournament_db_file = "turnuva.json"
+settings_file = "settings.json"
 
 def read_mappool_db():
 
@@ -72,3 +73,11 @@ def write_tournament_db(db):
         players_by_discord[discord_id] = player
 
     return
+
+def get_settings():
+    
+    with open(settings_file, "r", encoding='utf-8') as f:
+        data = json.load(f)
+
+    return data
+

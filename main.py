@@ -8,18 +8,14 @@ from copy import deepcopy
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
-from database import read_tournament_db, write_tournament_db
+from database import read_tournament_db, write_tournament_db , get_settings
 from requester import get_user_info
 
-prefix = "?"
+settings = get_settings()
 
-client = commands.Bot(command_prefix=prefix, case_insensitive=True)
+client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
 client.load_extension("beatmaps")
 
-tournament_color = discord.Color.from_rgb(177, 29, 160)
-
-
-rank_limit = 13200
 
 @client.command(name="ping")
 async def ping(ctx, player):
@@ -55,7 +51,7 @@ async def create_team(ctx, osu_user2, team_name):
     if user1 is not None:
         user1_rank = user1["statistics"]["pp_rank"]
     else:
-        await ctx.send(f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{prefix}register`")
+        await ctx.send(f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{settings['prefix']}register`")
         return
 
     print(f"?team {osu_user2} {team_name}")
@@ -64,8 +60,8 @@ async def create_team(ctx, osu_user2, team_name):
     elif osu_user2.startswith("<@"):
         user2_discord_id = osu_user2[2:-1]
     else:
-        await ctx.send(f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n"
-                       f"Ex: `{prefix}team @heyronii asdasfazamaz`")
+        await ctx.send(f"Kullanım: `{settings['prefix']}team @oyuncu takım_ismi`\n"
+                       f"Ex: `{settings['prefix']}team @heyronii asdasfazamaz`")
         return
     user2_discord_id = int(user2_discord_id)
 
@@ -97,10 +93,10 @@ async def create_team(ctx, osu_user2, team_name):
     user1_weight = get_user_weight(user1_rank)
     user2_weight = get_user_weight(user2_rank)
 
-    if user1_weight + user2_weight > rank_limit:
+    if user1_weight + user2_weight > settings["rank_limit"] :
         await ctx.send(
             f"Takımın toplam değeri sınırın üzerinde kaldığı için katılamazsınız."
-            f"\nTakımınızın toplam değeri: {user1_weight + user2_weight:.0f} > {rank_limit}")
+            f"\nTakımınızın toplam değeri: {user1_weight + user2_weight:.0f} > {settings['rank_limit']}")
     else:
         new_team = {"name": team_name, "user1": ctx.author.id, "user2": user2_discord_id}
         db["teams"].append(new_team)
@@ -267,7 +263,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
 
     desc_text = get_desc_text(data, page_no, result_per_page, called_by)
 
-    embed = discord.Embed(description=desc_text, color=tournament_color)
+    embed = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
     embed.set_author(name=fixed_fields["author_name"])
     embed.set_thumbnail(
         url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
@@ -305,7 +301,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                     page_no = max_page
 
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
-                embed2 = discord.Embed(description=desc_text, color=tournament_color)
+                embed2 = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
                 embed2.set_author(name=fixed_fields["author_name"])
                 embed2.set_thumbnail(
                     url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
@@ -320,7 +316,7 @@ async def create_paged_embed(ctx, data, fixed_fields, called_by):
                     page_no = 1
 
                 desc_text = get_desc_text(data, page_no, result_per_page, called_by)
-                embed2 = discord.Embed(description=desc_text, color=tournament_color)
+                embed2 = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
                 embed2.set_author(name=fixed_fields["author_name"])
                 embed2.set_thumbnail(
                     url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
@@ -374,19 +370,16 @@ async def register_tourney(ctx, osu_user1):
         uname = user["username"]
         if user["discord_id"] == ctx.author.id:
             await ctx.send(
-                f"Sen zaten turnuvaya `{uname}` adıyla kayıtlısın. Turnuvadan ayrılmak için: `{prefix}leave`")
+                f"Sen zaten turnuvaya `{uname}` adıyla kayıtlısın. Turnuvadan ayrılmak için: `{settings['prefix']}leave`")
             return
         if user["username"] == osu_user1 or str(user["id"]) == osu_user1:
-            await ctx.send(f"Turnuvaya `{uname}` adıyla kayıt olunmuş. Turnuvadan ayrılmak için: `{prefix}leave`")
+            await ctx.send(f"Turnuvaya `{uname}` adıyla kayıt olunmuş. Turnuvadan ayrılmak için: `{settings['prefix']}leave`")
             return
 
     user1_info = get_user_info(osu_user1)
 
     user1_info["discord_id"] = ctx.author.id
-    user1_weight = get_user_weight(user1_info["statistics"]["pp_rank"])
-    user2_weight = rank_limit - user1_weight
-
-    teammate_min_rank = binary_search(user2_weight)
+    teammate_min_rank =get_teammate_rank(user1_info["statistics"]["pp_rank"])
 
     db["users"].append(user1_info)
 
@@ -398,7 +391,7 @@ async def register_tourney(ctx, osu_user1):
         await ctx.author.add_roles(player_role)
 
     await ctx.send(f"`{osu_user1}` başarıyla turnuvaya katıldın! Devam edebilmek için bir takım kurman gerekiyor:\n"
-                   f"Kullanım: `{prefix}team @oyuncu takım_ismi`\n Ex. `{prefix}team @heyronii Yokediciler`\n"
+                   f"Kullanım: `{settings['prefix']}team @oyuncu takım_ismi`\n Ex. `{settings['prefix']}team @heyronii Yokediciler`\n"
                    f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
     return
 
@@ -429,7 +422,7 @@ async def check_player_rank(ctx, rank=None):
             p1_rank = int(rank)
             teammate_min_rank = get_teammate_rank(p1_rank)
         except:
-            await ctx.send(f"Usage: {prefix}rankcheck <optional: rank>")
+            await ctx.send(f"Usage: {settings['prefix']}rankcheck <optional: rank>")
             return
     else:
         user = check_registration(ctx.author.id)
@@ -466,8 +459,8 @@ async def get_potential_teammates(ctx):
         user_rank = user["statistics"]["pp_rank"]
     else:
         await ctx.send(
-            f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{prefix}register <osu username>` komutunu kullan.\n"
-            f"Yardım için `{prefix}help` yazabilirsin.")
+            f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{settings['prefix']}register <osu username>` komutunu kullan.\n"
+            f"Yardım için `{settings['prefix']}help` yazabilirsin.")
         return
 
     teammate_min_rank = get_teammate_rank(user_rank)
@@ -494,7 +487,7 @@ async def get_potential_teammates(ctx):
 
 def get_teammate_rank(rank):
     user1_weight = get_user_weight(rank)
-    user2_weight = rank_limit - user1_weight
+    user2_weight = settings["rank_limit"] - user1_weight
     return binary_search(user2_weight)
 
 
