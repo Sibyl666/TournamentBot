@@ -15,6 +15,7 @@ settings = get_settings()
 
 client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
 client.load_extension("beatmaps")
+client.load_extension("page_embed_new")
 
 
 @client.command(name="ping")
@@ -213,146 +214,6 @@ async def kick_player(ctx, osu_username):
     return
 
 
-async def create_paged_embed(ctx, data, fixed_fields, called_by):
-    page_no = 1
-
-    if called_by == "players":
-        max_item_index = len(data["users"])
-    if called_by == "teams":
-        max_item_index = len(data["teams"])
-
-    result_per_page = 16  # Show 16 results per page
-    max_page = math.ceil(max_item_index / result_per_page)
-
-    def get_desc_text(data, page_no, result_per_page, called_by):
-        desc_text = ""
-        if called_by == "players":
-            show_data = data["users"][(page_no - 1) * result_per_page:page_no * result_per_page]
-            for user_no, data_point in enumerate(show_data):
-                has_team = False
-                user_rank = data_point["statistics"]["pp_rank"]
-                username = data_point["username"]
-                user_discord_id = data_point["discord_id"]
-                for team in data["teams"]:
-                    team_name = team["name"]
-                    p1_discord = team["user1"]
-                    p2_discord = team["user2"]
-                    if user_discord_id == p1_discord or user_discord_id == p2_discord:
-                        has_team = True
-                        desc_text += f"#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank} - `{team_name}`\n"
-                        break
-                if not has_team:
-                    desc_text += f"**#{user_no + 1 + (page_no - 1) * result_per_page} - `{username}` - #{user_rank}**\n"
-
-        elif called_by == "teams":
-            show_data = data["teams"][(page_no - 1) * result_per_page:page_no * result_per_page]
-            for team_no, data_point in enumerate(show_data):
-                team_name = data_point["name"]
-                team_p1 = data_point["user1"]
-                team_p2 = data_point["user2"]
-
-                for user in data["users"]:
-                    if team_p1 == user["discord_id"]:
-                        team_p1_uname = user["username"]
-                    if team_p2 == user["discord_id"]:
-                        team_p2_uname = user["username"]
-
-                desc_text += f"#{team_no + 1 + (page_no - 1) * result_per_page}: `{team_name}` - {team_p1_uname} & {team_p2_uname}\n"
-
-        return desc_text
-
-    desc_text = get_desc_text(data, page_no, result_per_page, called_by)
-
-    embed = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
-    embed.set_author(name=fixed_fields["author_name"])
-    embed.set_thumbnail(
-        url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
-
-    if max_page <= 1:
-        await ctx.send(embed=embed)
-        return
-    else:
-        embed.set_footer(text=f"Page {page_no} of {max_page}")
-        msg = await ctx.send(embed=embed)
-        reactmoji = ['⬅', '➡']
-        while True:
-            for react in reactmoji:
-                await msg.add_reaction(react)
-
-            def check_react(reaction, user):
-                if reaction.message.id != msg.id:
-                    return False
-                if user != ctx.message.author:
-                    return False
-                if str(reaction.emoji) not in reactmoji:
-                    return False
-                return True
-
-            try:
-                res, user = await client.wait_for('reaction_add', timeout=30.0, check=check_react)
-            except asyncio.TimeoutError:
-                return await msg.clear_reactions()
-
-            if user != ctx.message.author:
-                pass
-            elif '⬅' in str(res.emoji):
-                page_no -= 1
-                if page_no < 1:
-                    page_no = max_page
-
-                desc_text = get_desc_text(data, page_no, result_per_page, called_by)
-                embed2 = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
-                embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(
-                    url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
-                embed2.set_footer(text=f"Page {page_no} of {max_page}")
-
-                await msg.clear_reactions()
-                await msg.edit(embed=embed2)
-
-            elif '➡' in str(res.emoji):
-                page_no += 1
-                if page_no > max_page:
-                    page_no = 1
-
-                desc_text = get_desc_text(data, page_no, result_per_page, called_by)
-                embed2 = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
-                embed2.set_author(name=fixed_fields["author_name"])
-                embed2.set_thumbnail(
-                    url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
-                embed2.set_footer(text=f"Page {page_no} of {max_page}")
-
-                await msg.clear_reactions()
-                await msg.edit(embed=embed2)
-
-
-@client.command(name='players')
-async def show_registered_players(ctx):
-    """
-    Turnuvaya kayıtlı oyuncuları gösterir.
-    """
-    data = read_tournament_db()
-
-    fixed_fields = {"author_name": "112'nin Corona Turnuvası Oyuncu Listesi"}
-
-    await create_paged_embed(ctx, data, fixed_fields, "players")
-    return
-
-
-@client.command(name='teams')
-async def show_registered_teams(ctx):
-    """
-    Turnuvaya kayıtlı takımları gösterir.
-    """
-
-    db = read_tournament_db()
-
-    fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi"}
-
-    await create_paged_embed(ctx, db, fixed_fields, "teams")
-
-    return
-
 
 @client.command(name='register')
 async def register_tourney(ctx, osu_user1):
@@ -448,42 +309,6 @@ def check_registration(user_discord):
         return None
 
 
-@client.command(name='teammate')
-async def get_potential_teammates(ctx):
-    """
-    Senin rankına uygun olabilecek takım arkadaşlarını gösterir.
-    """
-
-    user = check_registration(ctx.author.id)
-    if user is not None:
-        user_rank = user["statistics"]["pp_rank"]
-    else:
-        await ctx.send(
-            f"Turnuvaya kayıtlı değilsin, kayıt olmak için `{settings['prefix']}register <osu username>` komutunu kullan.\n"
-            f"Yardım için `{settings['prefix']}help` yazabilirsin.")
-        return
-
-    teammate_min_rank = get_teammate_rank(user_rank)
-
-    db = read_tournament_db()
-    potential_teammates = deepcopy(db)
-
-    for user in db["users"]:
-        in_team = False
-        for team in db["teams"]:
-            p1_id = team["user1"]
-            p2_id = team["user2"]
-            if p1_id == user["discord_id"] or p2_id == user["discord_id"]:
-                in_team = True
-
-        if in_team or teammate_min_rank > user["statistics"]["pp_rank"]:
-            potential_teammates["users"].remove(user)
-
-    fixed_fields = {"author_name": "Sana uygun takım arkadaşları listesi"}
-
-    await create_paged_embed(ctx, potential_teammates, fixed_fields, 'players')
-    return
-
 
 def get_teammate_rank(rank):
     user1_weight = get_user_weight(rank)
@@ -532,4 +357,4 @@ for player in db["users"]:
     discord_id = str(player["discord_id"])
     players_by_discord[discord_id] = player
 
-client.run(os.environ["TOKEN"])
+client.run(os.environ["Token"])
