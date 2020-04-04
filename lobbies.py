@@ -157,7 +157,7 @@ class Lobbies(commands.Cog):
         return
 
     @commands.command(name='lobbyregister')
-    #@commands.has_role("Oyuncu")
+    @commands.has_role("Oyuncu")
     async def register_player_to_lobby(self, ctx, lobby_name):
         """
         Qualifier lobisine kaydolun
@@ -225,7 +225,7 @@ class Lobbies(commands.Cog):
         return
 
     @commands.command(name='lobbyleave')
-    #@commands.has_role("Oyuncu")
+    @commands.has_role("Oyuncu")
     async def remove_player_from_lobby(self, ctx):
         """
         Katıldığınız Qualifier lobisini değiştirin.
