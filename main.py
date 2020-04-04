@@ -1,10 +1,9 @@
 import os
 import discord
-import asyncio
 from discord.ext import commands
 
-from database import read_tournament_db, write_tournament_db , get_settings
-from registration_check import  get_players_by_discord
+from database import read_tournament_db, write_tournament_db, get_settings
+from registration_check import get_players_by_discord
 
 settings = get_settings()
 

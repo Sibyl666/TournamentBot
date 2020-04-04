@@ -6,8 +6,8 @@ old_maps_filename = "old_maps.tsv"
 tournament_db_file = "turnuva.json"
 settings_file = "settings.json"
 
-def read_mappool_db():
 
+def read_mappool_db():
     if not os.path.exists(mappool_db_file):
         with open(mappool_db_file, "w", encoding='utf-8') as f:
             json.dump({}, f)
@@ -18,8 +18,8 @@ def read_mappool_db():
 
     return db
 
-def write_mappool_db(db):
 
+def write_mappool_db(db):
     with open(mappool_db_file, "w", encoding='utf-8') as f:
         json.dump(db, f, indent=2)
 
@@ -27,7 +27,6 @@ def write_mappool_db(db):
 
 
 def get_old_maps():
-        
     with open(old_maps_filename, "r") as f:
         old_maps = f.read().splitlines()
 
@@ -37,7 +36,6 @@ def get_old_maps():
 
 
 def read_tournament_db():
-
     if not os.path.exists(tournament_db_file):
         with open(tournament_db_file, "w", encoding='utf-8') as f:
             json.dump({"teams": [], "users": []}, f)
@@ -53,7 +51,6 @@ def read_tournament_db():
 
 
 def write_tournament_db(db):
-
     with open(tournament_db_file, "w", encoding='utf-8') as f:
         json.dump(db, f, indent=2)
 
@@ -66,10 +63,9 @@ def write_tournament_db(db):
 
     return
 
+
 def get_settings():
-    
     with open(settings_file, "r", encoding='utf-8') as f:
         data = json.load(f)
 
     return data
-

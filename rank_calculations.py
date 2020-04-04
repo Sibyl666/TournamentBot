@@ -1,21 +1,19 @@
 import math
 
 from database import get_settings
-from requester import get_user_info
 
 settings = get_settings()
+
 
 def get_user_weight(rank):
     # Ugly function to calculate user's rank weight
     return (19273 - 1371 * math.log(rank + 1000)) - (1000 * (1371 / (rank + 1000)))
 
 
-
 def get_teammate_rank(rank):
     user1_weight = get_user_weight(rank)
     user2_weight = settings["rank_limit"] - user1_weight
     return binary_search(user2_weight)
-
 
 
 def binary_search(weight):

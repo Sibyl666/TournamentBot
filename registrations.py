@@ -1,9 +1,7 @@
 import discord
-import asyncio
 from discord.ext import commands
 
-
-from database import read_tournament_db, write_tournament_db , get_settings
+from database import read_tournament_db, write_tournament_db, get_settings
 from requester import get_user_info
 from rank_calculations import get_teammate_rank
 from registration_check import check_registration
@@ -11,7 +9,7 @@ from registration_check import check_registration
 settings = get_settings()
 
 
-def remove_user_from_tournament( discord_id):
+def remove_user_from_tournament(discord_id):
     db = read_tournament_db()
 
     true_falses = {"removed": False, "disbanded": False}
@@ -54,11 +52,10 @@ def disband_team(team):
 
 class Registrations(commands.Cog):
 
-    def __init__(self,bot):
+    def __init__(self, bot):
 
         self.bot = bot
-        
-        
+
     async def remove_user_role(self, discord_id):
         guild = self.bot.get_guild(402213530599948299)
         player_role = discord.utils.get(guild.roles, id=693574523324203009)
@@ -69,7 +66,7 @@ class Registrations(commands.Cog):
         return
 
     @commands.command(name='register')
-    async def register_tourney(self,ctx, osu_user1):
+    async def register_tourney(self, ctx, osu_user1):
         """
         Turnuvaya katılan kişiyi listeye ekler.
 
@@ -87,13 +84,14 @@ class Registrations(commands.Cog):
                     f"Sen zaten turnuvaya `{uname}` adıyla kayıtlısın. Turnuvadan ayrılmak için: `{settings['prefix']}leave`")
                 return
             if user["username"] == osu_user1 or str(user["id"]) == osu_user1:
-                await ctx.send(f"Turnuvaya `{uname}` adıyla kayıt olunmuş. Turnuvadan ayrılmak için: `{settings['prefix']}leave`")
+                await ctx.send(
+                    f"Turnuvaya `{uname}` adıyla kayıt olunmuş. Turnuvadan ayrılmak için: `{settings['prefix']}leave`")
                 return
 
         user1_info = get_user_info(osu_user1)
 
         user1_info["discord_id"] = ctx.author.id
-        teammate_min_rank =get_teammate_rank(user1_info["statistics"]["pp_rank"])
+        teammate_min_rank = get_teammate_rank(user1_info["statistics"]["pp_rank"])
 
         db["users"].append(user1_info)
 
@@ -105,10 +103,9 @@ class Registrations(commands.Cog):
             await ctx.author.add_roles(player_role)
 
         await ctx.send(f"`{osu_user1}` başarıyla turnuvaya katıldın! Devam edebilmek için bir takım kurman gerekiyor:\n"
-                    f"Kullanım: `{settings['prefix']}team @oyuncu takım_ismi`\n Ex. `{settings['prefix']}team @heyronii Yokediciler`\n"
-                    f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
+                       f"Kullanım: `{settings['prefix']}team @oyuncu takım_ismi`\n Ex. `{settings['prefix']}team @heyronii Yokediciler`\n"
+                       f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
         return
-    
 
     @commands.command(name='kick')
     @commands.has_permissions(administrator=True)
@@ -146,10 +143,8 @@ class Registrations(commands.Cog):
 
         return
 
-
-
     @commands.command(name='leave')
-    async def remove_user(self,ctx):
+    async def remove_user(self, ctx):
         """
         Komutu kullanan kişiyi turnuvadan çıkarır.
         İçinde bulunduğu takım varsa, bozulur.
@@ -170,6 +165,7 @@ class Registrations(commands.Cog):
             await ctx.send(f"`{team_name}` takımı bozuldu... <@{p2_discord}>")
 
         return
+
 
 def setup(bot):
     bot.add_cog(Registrations(bot))

@@ -1,18 +1,16 @@
-import discord
-import asyncio
 from discord.ext import commands
 
-from database import read_tournament_db, write_tournament_db , get_settings
-from requester import get_user_info
+from database import read_tournament_db, write_tournament_db, get_settings
 from rank_calculations import get_user_weight, get_teammate_rank
 from registration_check import check_registration
 
 settings = get_settings()
 
+
 class Teams(commands.Cog):
 
     @commands.command(name='team')
-    async def create_team(self,ctx, osu_user2, team_name):
+    async def create_team(self, ctx, osu_user2, team_name):
         """
         Verilen takım ismi ve oyuncu ile takım oluşturur.
 
@@ -32,7 +30,8 @@ class Teams(commands.Cog):
         if user1 is not None:
             user1_rank = user1["statistics"]["pp_rank"]
         else:
-            await ctx.send(f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{settings['prefix']}register`")
+            await ctx.send(
+                f"Takım oluşturmadan önce turnuvaya kayıt olmalısın.\nKullanım: `{settings['prefix']}register`")
             return
 
         print(f"?team {osu_user2} {team_name}")
@@ -42,7 +41,7 @@ class Teams(commands.Cog):
             user2_discord_id = osu_user2[2:-1]
         else:
             await ctx.send(f"Kullanım: `{settings['prefix']}team @oyuncu takım_ismi`\n"
-                        f"Ex: `{settings['prefix']}team @heyronii asdasfazamaz`")
+                           f"Ex: `{settings['prefix']}team @heyronii asdasfazamaz`")
             return
         user2_discord_id = int(user2_discord_id)
 
@@ -74,7 +73,7 @@ class Teams(commands.Cog):
         user1_weight = get_user_weight(user1_rank)
         user2_weight = get_user_weight(user2_rank)
 
-        if user1_weight + user2_weight > settings["rank_limit"] :
+        if user1_weight + user2_weight > settings["rank_limit"]:
             await ctx.send(
                 f"Takımın toplam değeri sınırın üzerinde kaldığı için katılamazsınız."
                 f"\nTakımınızın toplam değeri: {user1_weight + user2_weight:.0f} > {settings['rank_limit']}")
@@ -86,8 +85,6 @@ class Teams(commands.Cog):
         write_tournament_db(db)
         return
 
-
-            
     @commands.command(name='rankcheck')
     async def check_player_rank(self, ctx, rank=None):
         """
@@ -114,6 +111,7 @@ class Teams(commands.Cog):
 
         await ctx.send(f"Beraber katılabileceğin takım arkadaşın {teammate_min_rank:0d}+ rank olabilir.")
         return
+
 
 def setup(bot):
     bot.add_cog(Teams(bot))

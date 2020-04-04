@@ -10,8 +10,8 @@ from registration_check import check_registration
 
 settings = get_settings()
 
-def get_teams_desc(data):
 
+def get_teams_desc(data):
     desc_lines = []
     show_data = data["teams"]
     for team_no, data_point in enumerate(show_data):
@@ -29,8 +29,8 @@ def get_teams_desc(data):
 
     return desc_lines
 
-def get_player_desc(data):
 
+def get_player_desc(data):
     desc_lines = []
     show_data = data["users"]
     for user_no, data_point in enumerate(show_data):
@@ -48,20 +48,19 @@ def get_player_desc(data):
                 break
         if not has_team:
             desc_lines += [f"**#{user_no + 1} - `{username}` - #{user_rank}**"]
-        
-    return desc_lines
 
+    return desc_lines
 
 
 class Paged_Embed(commands.Cog):
 
-    def __init__(self,bot):
+    def __init__(self, bot):
         self.bot = bot
         self.result_per_page = 16
-        
+
     def get_page_as_string(self, line_list, page_no):
 
-        page_lines = line_list[(page_no - 1) * self.result_per_page : page_no * self.result_per_page]
+        page_lines = line_list[(page_no - 1) * self.result_per_page: page_no * self.result_per_page]
         return "\n".join(page_lines)
 
     def create_embed(self, desc_text, fixed_fields):
@@ -74,13 +73,13 @@ class Paged_Embed(commands.Cog):
         return embed
 
     async def send_and_control_pages(self, ctx, lines, fixed_fields):
-        
+
         page_no = 1
         max_page = math.ceil(len(lines) / self.result_per_page)
 
         page_string = self.get_page_as_string(lines, page_no)
         embed = self.create_embed(page_string, fixed_fields)
-        
+
         if max_page <= 1:
             await ctx.send(embed=embed)
             return
@@ -132,9 +131,8 @@ class Paged_Embed(commands.Cog):
                     await msg.clear_reactions()
                     await msg.edit(embed=embed2)
 
-
     @commands.command(name='players')
-    async def show_registered_players(self,ctx):
+    async def show_registered_players(self, ctx):
         """
         Turnuvaya kayıtlı oyuncuları gösterir.
         """
@@ -144,9 +142,8 @@ class Paged_Embed(commands.Cog):
 
         await self.send_and_control_pages(ctx, desc_lines, fixed_fields)
 
-
     @commands.command(name='teams')
-    async def show_registered_teams(self,ctx):
+    async def show_registered_teams(self, ctx):
         """
         Turnuvaya kayıtlı takımları gösterir.
         """
@@ -155,8 +152,7 @@ class Paged_Embed(commands.Cog):
         desc_lines = get_teams_desc(data)
         fixed_fields = {"author_name": "112'nin Corona Turnuvası Takım Listesi"}
 
-        await self.send_and_control_pages(ctx, desc_lines,  fixed_fields)
-
+        await self.send_and_control_pages(ctx, desc_lines, fixed_fields)
 
     @commands.command(name='teammate')
     async def get_potential_teammates(self, ctx):
@@ -192,7 +188,7 @@ class Paged_Embed(commands.Cog):
         desc_lines = get_player_desc(potential_teammates)
         fixed_fields = {"author_name": "Sana uygun takım arkadaşları listesi"}
 
-        await self.send_and_control_pages(ctx, desc_lines, fixed_fields,)
+        await self.send_and_control_pages(ctx, desc_lines, fixed_fields, )
         return
 
 

@@ -1,5 +1,5 @@
-
 from database import read_tournament_db
+
 
 def get_players_by_discord():
     db = read_tournament_db()
@@ -11,6 +11,7 @@ def get_players_by_discord():
 
     return players_by_discord
 
+
 def check_registration(user_discord):
     user_discord = str(user_discord)
 
@@ -21,4 +22,3 @@ def check_registration(user_discord):
         return user
     else:
         return None
-

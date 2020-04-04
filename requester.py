@@ -1,14 +1,7 @@
-import os
 import json
 import requests
-import math
-import discord
-import asyncio
-from oppai import ezpp_set_autocalc, ezpp_new, ezpp_data_dup
-from copy import deepcopy
-from discord.ext import commands
 from bs4 import BeautifulSoup
-
+from oppai import ezpp_set_autocalc, ezpp_new, ezpp_data_dup
 
 
 def get_user_info(username):

@@ -1,7 +1,4 @@
-
-import requests
 import discord
-import asyncio
 from oppai import ezpp_mods, ezpp_set_mods, ezpp_stars, MODS_HR, MODS_DT
 from discord.ext import commands
 
@@ -10,15 +7,15 @@ from requester import get_map_info
 
 settings = get_settings()
 
+
 class Mappool(commands.Cog):
 
-    def __init__(self,bot):
+    def __init__(self, bot):
         self.bot = bot
-
 
     @commands.command(name="poolannounce")
     @commands.has_permissions(administrator=True)
-    async def announce_mappool(self,ctx, which_pool):
+    async def announce_mappool(self, ctx, which_pool):
         channel = self.bot.get_channel(693814385260494918)
         mappool_db = read_mappool_db()
 
@@ -28,13 +25,13 @@ class Mappool(commands.Cog):
             mods = mods[:4]
         for mod in mods:
             bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
-                    bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+                     bmap["mappool"] == which_pool and bmap["modpool"] == mod]
 
             await self.show_single_mod_pool(channel, bmaps, which_pool, mod)
 
     @commands.command(name='poolshow')
     @commands.has_role("Mappool")
-    async def mappool_show(self,ctx, which_pool, mod=None):
+    async def mappool_show(self, ctx, which_pool, mod=None):
         """
         Shows the selected pool
         which_pool: Must be one of [QF, W1, W2]
@@ -55,18 +52,17 @@ class Mappool(commands.Cog):
                 mods = mods[:4]
             for mod in mods:
                 bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
-                    bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+                         bmap["mappool"] == which_pool and bmap["modpool"] == mod]
 
                 await self.show_single_mod_pool(ctx, bmaps, which_pool, mod)
         else:
             bmaps = [(bmap_id, bmap) for bmap_id, bmap in mappool_db.items() if
-                    bmap["mappool"] == which_pool and bmap["modpool"] == mod]
+                     bmap["mappool"] == which_pool and bmap["modpool"] == mod]
             await self.show_single_mod_pool(ctx, bmaps, which_pool, mod)
 
         return
 
-
-    async def show_single_mod_pool(self,ctx, bmaps, which_pool, mod):
+    async def show_single_mod_pool(self, ctx, bmaps, which_pool, mod):
 
         color = discord.Color.from_rgb(*settings["mod_colors"][mod])
         desc_text = ""
@@ -82,7 +78,7 @@ class Mappool(commands.Cog):
             bmap_url = bmap['url']
             bmap_name = f"{bmapset['artist']} - {bmapset['title']} [{bmap['version']}]"
             desc_text += f"▸[{bmap_name}]({bmap_url})\n" \
-                        f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm} ▸SR: {star_rating}* \n\n"
+                         f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm} ▸SR: {star_rating}* \n\n"
 
         author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
         embed = discord.Embed(description=desc_text, color=color)
@@ -93,10 +89,9 @@ class Mappool(commands.Cog):
 
         return
 
-
     @commands.command(name='mappool')
     @commands.has_role("Mappool")
-    async def mappool(self,ctx, action, map_link=None, which_pool=None, mod=None, comment=""):
+    async def mappool(self, ctx, action, map_link=None, which_pool=None, mod=None, comment=""):
         """
         Add, remove or show maps from the mappools
 
@@ -111,18 +106,18 @@ class Mappool(commands.Cog):
             mod = mod.upper()
             if map_link is None or mod is None or which_pool is None:
                 await ctx.send("You should add map link, pool and mod to the query.\n"
-                            "Ex. `?mappool add https://osu.ppy.sh/beatmapsets/170942#osu/611679 qf NM`")
+                               "Ex. `?mappool add https://osu.ppy.sh/beatmapsets/170942#osu/611679 qf NM`")
                 return
 
             pools = ["QF", "W1", "W2"]
             if which_pool not in pools:
                 await ctx.send(f"Mappools can only be QF, W1 or W2.\n"
-                            f"You wanted to add to {which_pool}. There's no pool option for that.")
+                               f"You wanted to add to {which_pool}. There's no pool option for that.")
                 return
 
             if not (map_link.startswith("http://") or map_link.startswith("https://")):
                 await ctx.send(f"Map link should start with http:// or https://.\n"
-                            f"You linked <{map_link}>, I don't think it's a valid link.")
+                               f"You linked <{map_link}>, I don't think it's a valid link.")
                 return
 
             map_id = map_link.split("/")[-1]
@@ -130,7 +125,7 @@ class Mappool(commands.Cog):
                 map_id_int = int(map_id)
             except:
                 await ctx.send(f"Map link seems wrong. Please check again. \n"
-                            f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
+                               f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
                 return
 
             mods = ["NM", "HD", "HR", "DT", "FM", "TB"]
@@ -140,13 +135,13 @@ class Mappool(commands.Cog):
 
             if mod not in mods:
                 await ctx.send(f"Mods can only be one of from {mods}.\n"
-                            f"You wanted to select {mod} mod pool, but it does not exist.")
+                               f"You wanted to select {mod} mod pool, but it does not exist.")
                 return
 
             old_maps_list = get_old_maps()
             if map_id in old_maps_list:
                 await ctx.send(f"The map you linked has been used in the previous iterations of this tournament.\n"
-                            f"You linked <{map_link}>")
+                               f"You linked <{map_link}>")
                 return
 
             map_info, ezpp_map = get_map_info(map_id)
@@ -165,7 +160,7 @@ class Mappool(commands.Cog):
 
             if selected_bmap is None:
                 await ctx.send(f"<@!146746632799649792> something went wrong.\n"
-                            f"Requested command: {settings['prefix']}{ctx.command.name} {ctx.args[1:]}")
+                               f"Requested command: {settings['prefix']}{ctx.command.name} {ctx.args[1:]}")
                 return
 
             bmap_artist = map_info["artist"]
@@ -212,7 +207,8 @@ class Mappool(commands.Cog):
                 footer_text = f"{maps_in_pool + 1} out of {max_map_in_pool} maps in {which_pool} {mod} pool"
                 write_mappool_db(mappool_db)
 
-            embed = discord.Embed(title=title_text, description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]), url=bmap_url)
+            embed = discord.Embed(title=title_text, description=desc_text,
+                                  color=discord.Color.from_rgb(*settings["tournament_color"]), url=bmap_url)
             embed.set_thumbnail(
                 url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
             embed.set_author(name=author_name)
@@ -224,11 +220,11 @@ class Mappool(commands.Cog):
         elif action.lower() == "remove":
             if map_link is None:
                 await ctx.send("You should add map link to the query.\n"
-                            "Ex. `?mappool remove https://osu.ppy.sh/beatmapsets/170942#osu/611679`")
+                               "Ex. `?mappool remove https://osu.ppy.sh/beatmapsets/170942#osu/611679`")
 
             if not (map_link.startswith("http://") or map_link.startswith("https://")):
                 await ctx.send(f"Map link should start with http:// or https://.\n"
-                            f"You linked <{map_link}>, I don't think it's a valid link.")
+                               f"You linked <{map_link}>, I don't think it's a valid link.")
                 return
 
             map_id = map_link.split("/")[-1]
@@ -236,7 +232,7 @@ class Mappool(commands.Cog):
                 map_id_int = int(map_id)
             except:
                 await ctx.send(f"Map link seems wrong. Please check again. \n"
-                            f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
+                               f"You linked <{map_link}> but I couldn\'t find beatmap id from it.")
                 return
 
             mappool_db = read_mappool_db()
@@ -245,13 +241,14 @@ class Mappool(commands.Cog):
                 del mappool_db[map_id]
             except KeyError:
                 await ctx.send(f"The specified beatmap does not exist in the pools.\n"
-                            f"You wanted to remove <{map_link}>.")
+                               f"You wanted to remove <{map_link}>.")
                 return
 
             write_mappool_db(mappool_db)
             await ctx.send(f"Successfully deleted <{map_link}> from pools.")
 
             return
+
 
 def setup(bot):
     bot.add_cog(Mappool(bot))
