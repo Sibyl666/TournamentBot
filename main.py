@@ -39,4 +39,4 @@ async def on_ready():
     return
 
 
-client.run("NTU5NDYyMTY1MjEyNTYxNDE4.XoCCRQ.LLXyHvYVAvqo2DuRhvYsi4rzvlk")
+client.run(os.environ["Token"])
