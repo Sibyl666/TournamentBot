@@ -273,7 +273,7 @@ class Lobbies(commands.Cog):
         await old_msg.edit(embed=old_embed)
 
         write_lobby_db(lobbies)
-        await ctx.send(f"`{team_name}` takımını `{old_lobby}` lobisinden ayrıldın.")
+        await ctx.send(f"`{team_name}` takımı `{old_lobby}` lobisinden ayrıldı.")
         return
 
 
