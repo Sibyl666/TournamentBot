@@ -1,0 +1,49 @@
+{
+  "prefix": "?",
+  "mod_colors": {
+    "NM": [
+      217,
+      217,
+      217
+    ],
+    "HD": [
+      255,
+      229,
+      153
+    ],
+    "HR": [
+      234,
+      153,
+      153
+    ],
+    "DT": [
+      180,
+      167,
+      214
+    ],
+    "FM": [
+      182,
+      215,
+      168
+    ],
+    "TB": [
+      241,
+      194,
+      50
+    ]
+  },
+  "mod_icons": {
+    "NM": "https://hey.s-ul.eu/c4QRqJD0.png",
+    "HD": "https://hey.s-ul.eu/OUnYqa19.png",
+    "HR": "https://hey.s-ul.eu/46z1yt5h.png",
+    "DT": "https://hey.s-ul.eu/oMFybwVu.png",
+    "FM": "https://hey.s-ul.eu/RVu5RAsk.png",
+    "TB": "https://hey.s-ul.eu/l44yzxS6.png"
+  },
+  "tournament_color": [
+    117,
+    29,
+    160
+  ],
+  "rank_limit": 13200
+}
