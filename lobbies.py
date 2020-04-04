@@ -9,7 +9,7 @@ settings = get_settings()
 fake = Faker('tr_TR')
 
 LOBBY_TEAM_LIMIT = 8
-lobi_channel_announce_id = 695995314976325662
+lobi_channel_announce_id = 695995975189135430
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
