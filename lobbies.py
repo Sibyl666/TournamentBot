@@ -11,6 +11,8 @@ settings = get_settings()
 fake = Faker('tr_TR')
 
 LOBBY_TEAM_LIMIT = 8
+test = 695995314976325662
+servis = 695995975189135430
 lobi_channel_announce_id = 695995975189135430
 
 def strfdelta(tdelta, fmt):
@@ -155,7 +157,7 @@ class Lobbies(commands.Cog):
         return
 
     @commands.command(name='lobbyregister')
-    @commands.has_role("Oyuncu")
+    #@commands.has_role("Oyuncu")
     async def register_player_to_lobby(self, ctx, lobby_name):
         """
         Qualifier lobisine kaydolun
@@ -165,6 +167,7 @@ class Lobbies(commands.Cog):
         users = read_tournament_db()
         author_id = ctx.author.id
         team = is_user_captain(author_id, users)
+        team_name = team["name"]
 
         if team is None:
             await ctx.send("Takımın yok veya takım kaptanı değilsin...")
@@ -180,7 +183,12 @@ class Lobbies(commands.Cog):
             await ctx.send(f"`{lobby_name}` isimli lobi dolu.")
             return
 
-        team_name = team["name"]
+        for name, lobby in lobbies.items():
+            if team_name in lobby["teams"]:
+                await ctx.send(f"Bulunduğun takım `{name}` lobisinde kayıtlı gözüküyor.\n"
+                               f"Lobini değişirmek için önce lobiden ayrılmalısın. (`?lobbyleave`)")
+                return
+
         for user in users["users"]:
             if user["discord_id"] == ctx.author.id:
                 osu_user1 = user["username"]
@@ -217,7 +225,7 @@ class Lobbies(commands.Cog):
         return
 
     @commands.command(name='lobbyleave')
-    @commands.has_role("Oyuncu")
+    #@commands.has_role("Oyuncu")
     async def remove_player_from_lobby(self, ctx):
         """
         Katıldığınız Qualifier lobisini değiştirin.
