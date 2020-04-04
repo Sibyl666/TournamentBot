@@ -3,8 +3,8 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+#from backports.datetime_fromisoformat import MonkeyPatch
+#MonkeyPatch.patch_fromisoformat()
 
 
 settings = get_settings()
@@ -14,7 +14,7 @@ fake = Faker('tr_TR')
 LOBBY_TEAM_LIMIT = 8
 test = 695995314976325662
 servis = 695995975189135430
-lobi_channel_announce_id = 693913004957368353
+lobi_channel_announce_id = 695995975189135430
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
