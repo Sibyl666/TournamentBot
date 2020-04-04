@@ -216,9 +216,9 @@ class Lobbies(commands.Cog):
         await ctx.send(f"`{team_name}` takımını `{lobby_name}` adlı lobiye ekledim!")
         return
 
-    @commands.command(name='lobbychange')
+    @commands.command(name='lobbyleave')
     @commands.has_role("Oyuncu")
-    async def change_player_lobby(self, ctx, lobby_name):
+    async def remove_player_from_lobby(self, ctx):
         """
         Katıldığınız Qualifier lobisini değiştirin.
         lobby: Girmek istediğiniz yeni lobi adı
@@ -234,14 +234,6 @@ class Lobbies(commands.Cog):
 
         lobbies = read_lobby_db()
 
-        if lobby_name not in lobbies:
-            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
-            return
-
-        if len(lobbies[lobby_name]["teams"]) >= LOBBY_TEAM_LIMIT:
-            await ctx.send(f"`{lobby_name}` isimli lobi dolu.")
-            return
-
         old_lobby = None
         for k, v in lobbies.items():
             if team_name in v["teams"]:
@@ -252,22 +244,6 @@ class Lobbies(commands.Cog):
         else:
             await ctx.send("Henüz bir lobiye kayıtlı değilsin. `?lobbyregister` komutunu kullan.")
             return
-
-        lobbies[lobby_name]["teams"].update({team_name: team_to_add})
-
-        lobby_teams = lobbies[lobby_name]["teams"]
-        lobby_date = datetime.fromisoformat(lobbies[lobby_name]["date"])
-
-        desc_text = ""
-        for team_name, players in lobby_teams.items():
-            desc_text += f"▸**{team_name}** - {players[0][1]}, {players[1][1]}\n"
-
-        date_string = lobby_date.strftime("%d/%m/%Y - %H:%M, %a")
-        embed = discord.Embed(description=desc_text, title=f"{date_string}",
-                              color=discord.Color.from_rgb(*settings["tournament_color"]))
-        embed.set_author(name=f"112'nin Corona Turnuvası - Qualifier Lobby {lobby_name}")
-        embed.set_thumbnail(
-            url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
 
         old_lobby_teams = lobbies[old_lobby]["teams"]
         old_lobby_date = datetime.fromisoformat(lobbies[old_lobby]["date"])
@@ -283,16 +259,13 @@ class Lobbies(commands.Cog):
         old_embed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
 
-        msg_id = lobbies[lobby_name]["msg_id"]
         old_msg_id = lobbies[old_lobby]["msg_id"]
         channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
         old_msg = await channel.fetch_message(old_msg_id)
-        msg = await channel.fetch_message(msg_id)
         await old_msg.edit(embed=old_embed)
-        await msg.edit(embed=embed)
 
         write_lobby_db(lobbies)
-        await ctx.send(f"`{team_name}` takımını `{old_lobby}` lobisinden `{lobby_name}` lobisine yerleştirdim.")
+        await ctx.send(f"`{team_name}` takımını `{old_lobby}` lobisinden ayrıldın.")
         return
 
 
