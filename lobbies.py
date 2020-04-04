@@ -3,8 +3,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+
 
 settings = get_settings()
 
@@ -13,7 +12,7 @@ fake = Faker('tr_TR')
 LOBBY_TEAM_LIMIT = 8
 test = 695995314976325662
 servis = 695995975189135430
-lobi_channel_announce_id = 695995975189135430
+lobi_channel_announce_id = 693913004957368353
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
@@ -43,8 +42,11 @@ class Lobbies(commands.Cog):
 
     @commands.command(name='nextlobby')
     async def show_next_lobby(self, ctx):
+        """
+        Sıradaki lobiyi gösterir.        
+        """
         lobbies = read_lobby_db()
-        lobby_list = [{"name": k, "date": datetime.fromisoformat(v["date"]), "teams": v["teams"]}
+        lobby_list = [{"name": k, "date": datetime.fromisoformat(v["date"]), "teams": v["teams"], "referee_discord_id":v["referee_discord_id"], "mp_link":v["mp_link"]}
                       for k, v in lobbies.items()]
         lobby_list.sort(key=lambda x: x["date"])
 
@@ -52,7 +54,7 @@ class Lobbies(commands.Cog):
             date = lobby["date"]
             name = lobby["name"]
             teams = lobby["teams"]
-
+            
             remains = date - datetime.now()
             if remains.total_seconds() > 0:
                 desc_text = ""
@@ -67,6 +69,13 @@ class Lobbies(commands.Cog):
                 embed.set_thumbnail(
                     url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
                 embed.set_footer(text=f"Remaining time: {rem_time}")
+
+                if lobby["referee_discord_id"] != "":
+                    embed.insert_field_at(index= 0, name="Hakem:", value=f"<@{lobby['referee_discord_id']}>", inline=True)
+                if lobby["mp_link"] != "":
+                    embed.url = lobby["mp_link"]
+
+
                 await ctx.send(embed=embed)
                 break
         return
@@ -88,7 +97,7 @@ class Lobbies(commands.Cog):
             if len(lobby["teams"]) == 8:
                 desc_text += "** (FULL!)**\n"
             else:
-                desc_text += "\n"
+                desc_text += f" {len(lobby['teams'])}/8\n"
 
         embed = discord.Embed(description=desc_text,
                               color=discord.Color.from_rgb(*settings["tournament_color"]))
@@ -130,7 +139,7 @@ class Lobbies(commands.Cog):
 
         msg = await channel.send(embed=embed)
 
-        lobbies[lobby_name] = {"date": lobby_date.isoformat(), "name": lobby_name, "teams": {}, "msg_id": msg.id}
+        lobbies[lobby_name] = {"date": lobby_date.isoformat(), "name": lobby_name, "teams": {}, "msg_id": msg.id, "mp_link":"", "referee":"", "referee_discord_id":""}
         write_lobby_db(lobbies)
 
         return
@@ -213,6 +222,12 @@ class Lobbies(commands.Cog):
         embed.set_author(name=f"112'nin Corona Turnuvası - Qualifier Lobby {lobby_name}")
         embed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+        
+
+        if lobbies[lobby_name]["referee"] != "":
+            embed.insert_field_at(index= 0, name="Hakem:", value=f"<@{lobbies[lobby_name]['referee_discord_id']}>", inline=True)
+        if lobbies[lobby_name]["mp_link"] != "":
+            embed.url = lobbies[lobby_name]["mp_link"]
 
         msg_id = lobbies[lobby_name]["msg_id"]
         channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
@@ -228,8 +243,7 @@ class Lobbies(commands.Cog):
     @commands.has_role("Oyuncu")
     async def remove_player_from_lobby(self, ctx):
         """
-        Katıldığınız Qualifier lobisini değiştirin.
-        lobby: Girmek istediğiniz yeni lobi adı
+        Katıldığınız Qualifier lobisinden çıkın.
         """
         users = read_tournament_db()
         author_id = ctx.author.id
@@ -266,6 +280,11 @@ class Lobbies(commands.Cog):
         old_embed.set_author(name=f"112'nin Corona Turnuvası - Qualifier Lobby {old_lobby_name}")
         old_embed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+        
+        if lobbies[old_lobby_name]["referee"] != "":
+            old_embed.insert_field_at(index= 0, name="Hakem:", value=f"<@{lobbies[old_lobby_name]['referee_discord_id']}>", inline=True)
+        if lobbies[old_lobby_name]["mp_link"] != "":
+            old_embed.url = lobbies[old_lobby_name]["mp_link"]
 
         old_msg_id = lobbies[old_lobby]["msg_id"]
         channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
@@ -275,6 +294,99 @@ class Lobbies(commands.Cog):
         write_lobby_db(lobbies)
         await ctx.send(f"`{team_name}` takımı `{old_lobby}` lobisinden ayrıldı.")
         return
+
+
+    @commands.command(name='refregister')
+    @commands.has_role("Hakem")
+    async def register_referee_to_lobby(self, ctx, lobby_name):
+        """
+        Hakemlik yapmak istediğiniz odalara kaydolun.
+        lobby_name: Kaydolmak istediğiniz odanın adı
+        """
+        lobbies = read_lobby_db()
+
+        if lobby_name not in lobbies:
+            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
+            return
+
+        if lobbies[lobby_name]["referee"] != "":
+            await ctx.send(f"`{lobby_name}`'de zaten bir hakem kayıtlı.")
+            return
+
+        lobbies[lobby_name]["referee"] = ctx.author.name
+        lobbies[lobby_name]["referee_discord_id"] = ctx.author.id
+        
+        msg_id = lobbies[lobby_name]["msg_id"]
+        channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
+        msg = await channel.fetch_message(msg_id)
+        
+        embed = msg.embeds[0].copy()
+        embed.insert_field_at(index= 0, name="Hakem:", value=f"<@{ctx.author.id}>", inline=True)
+        await msg.edit(embed=embed)
+
+        write_lobby_db(lobbies)
+        await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisine hakem olarak katıldı.")
+
+    @commands.command(name='refleave')
+    @commands.has_role("Hakem")
+    async def remove_referee_to_lobby(self, ctx, lobby_name):
+        """
+        Hakemliği bırakmak istediğiniz odadan çıkın.
+        lobby_name: Çıkmak istediğiniz odanın adı
+        """
+        lobbies = read_lobby_db()
+        
+        if lobby_name not in lobbies:
+            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
+            return
+        
+        if lobbies[lobby_name]["referee_discord_id"] != ctx.author.id:
+            await ctx.send(f"`{lobby_name}` adındaki lobide hakem sen değilsin.")
+            return
+        else:
+            lobbies[lobby_name]["referee"] = ""
+            lobbies[lobby_name]["referee_discord_id"] = ""
+            
+            msg_id = lobbies[lobby_name]["msg_id"]
+            channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
+            msg = await channel.fetch_message(msg_id)
+        
+            embed = msg.embeds[0].copy()
+            embed.remove_field(0)
+            await msg.edit(embed=embed)
+
+            write_lobby_db(lobbies)
+            await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisindeki hakemlikten ayrıldı.")
+
+    @commands.command(name='addmplink')
+    @commands.has_role("Hakem")
+    async def add_mp_link_to_lobby(self, ctx, lobby_name, mp_link):
+        """
+        Odaya bir Mp Linki ekleyin
+        lobby_name: Eklemek istediğiniz odanın adı
+        mp_link: Maç linki
+        """
+        lobbies = read_lobby_db()
+        
+        if lobby_name not in lobbies:
+            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
+            return
+        
+        if lobbies[lobby_name]["referee_discord_id"] != ctx.author.id:
+            await ctx.send(f"`{lobby_name}` adındaki lobide hakem sen değilsin.")
+            return
+        else:
+            msg_id = lobbies[lobby_name]["msg_id"]
+            channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
+            msg = await channel.fetch_message(msg_id)
+            
+            embed = msg.embeds[0].copy()
+            embed.url = mp_link
+            await msg.edit(embed=embed)
+            
+            lobbies[lobby_name]["mp_link"] = mp_link
+            write_lobby_db(lobbies)
+            await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisine mp link eklendi.")
 
 
 def setup(bot):
