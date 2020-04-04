@@ -13,6 +13,7 @@ client.load_extension("paged_embeds")
 client.load_extension("teams")
 client.load_extension("misc")
 client.load_extension("registrations")
+client.load_extension("lobbies")
 
 
 @client.event

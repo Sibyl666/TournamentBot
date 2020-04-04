@@ -4,7 +4,27 @@ import json
 mappool_db_file = "beatmaps.json"
 old_maps_filename = "old_maps.tsv"
 tournament_db_file = "turnuva.json"
+lobby_db_file = "lobbies.json"
 settings_file = "settings.json"
+
+
+def read_lobby_db():
+    if not os.path.exists(lobby_db_file):
+        with open(lobby_db_file, "w", encoding='utf-8') as f:
+            json.dump({}, f)
+        return {}
+
+    with open(lobby_db_file, "r", encoding='utf-8') as f:
+        db = json.load(f)
+
+    return db
+
+
+def write_lobby_db(db):
+    with open(lobby_db_file, "w", encoding='utf-8') as f:
+        json.dump(db, f, indent=2)
+
+    return
 
 
 def read_mappool_db():
