@@ -167,7 +167,7 @@ class Lobbies(commands.Cog):
         await ctx.send(f"Deleted `{name}` from the lobbies.")
         return
 
-    @commands.command(name='lobbyregister')
+    @commands.command(name='lobbyjoin')
     @commands.has_role("Oyuncu")
     async def register_player_to_lobby(self, ctx, lobby_name):
         """
@@ -298,7 +298,7 @@ class Lobbies(commands.Cog):
         return
 
 
-    @commands.command(name='refregister')
+    @commands.command(name='refjoin')
     @commands.has_role("Hakem")
     async def register_referee_to_lobby(self, ctx, lobby_name):
         """
