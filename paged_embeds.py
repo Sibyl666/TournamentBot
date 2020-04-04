@@ -52,7 +52,7 @@ def get_player_desc(data):
     return desc_lines
 
 
-class Paged_Embed(commands.Cog):
+class Details(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -193,4 +193,4 @@ class Paged_Embed(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Paged_Embed(bot))
+    bot.add_cog(Details(bot))

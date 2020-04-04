@@ -12,11 +12,15 @@ class Misc(commands.Cog):
         self.bot = bot
 
     @commands.command(name="ping")
-    async def ping(self, ctx, player):
+    async def ping(self, ctx, osu_username):
+        """
+        osu! nicki verilen oyuncuyu pingler
+        osu_username: Pinglemek istediğiniz oyuncunun osu!'daki ismi
+        """
         db = read_tournament_db()
 
         for user in db["users"]:
-            if player.lower() == user["username"].lower():
+            if osu_username.lower() == user["username"].lower():
                 discord_user = discord.utils.get(ctx.guild.members, id=user["discord_id"])
                 await ctx.send(discord_user.mention)
                 return

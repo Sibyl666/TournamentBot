@@ -17,11 +17,11 @@ client.load_extension("registrations")
 
 @client.event
 async def on_ready():
-    print(f"Bot Started!!")
     db = read_tournament_db()
     guild = client.get_guild(402213530599948299)
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
+    print(f"Checking player roles..")
     for member in guild.members:
         if player_role in member.roles:
             id = str(member.id)
@@ -35,6 +35,7 @@ async def on_ready():
         if player_role not in discord_user.roles:
             print(f"Adding {player_role} role to {discord_user}")
             await discord_user.add_roles(player_role)
+    print(f"Bot Started!!")
     return
 
 
