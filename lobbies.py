@@ -3,18 +3,16 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
 
 
 settings = get_settings()
 
 fake = Faker('tr_TR')
 
-LOBBY_TEAM_LIMIT = 8
-test = 695995314976325662
+LOBBY_TEAM_LIMIT = 7
+test = 693913004957368353
 servis = 695995975189135430
-lobi_channel_announce_id = 695995975189135430
+lobi_channel_announce_id = 693913004957368353
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
@@ -96,10 +94,10 @@ class Lobbies(commands.Cog):
             name = lobby["name"]
             date = lobby["date"].strftime("%d/%m/%Y - %H:%M, %a")
             desc_text += f"▸**{name}** - {date}"
-            if len(lobby["teams"]) == 8:
+            if len(lobby["teams"]) == LOBBY_TEAM_LIMIT:
                 desc_text += "** (FULL!)**\n"
             else:
-                desc_text += f" {len(lobby['teams'])}/8\n"
+                desc_text += f" {len(lobby['teams'])}/{LOBBY_TEAM_LIMIT}\n"
 
         embed = discord.Embed(description=desc_text,
                               color=discord.Color.from_rgb(*settings["tournament_color"]))
