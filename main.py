@@ -8,11 +8,11 @@ from registration_check import get_players_by_discord
 settings = get_settings()
 
 client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
-client.load_extension("beatmaps")
-client.load_extension("paged_embeds")
-client.load_extension("teams")
-client.load_extension("misc")
-client.load_extension("registrations")
+
+cog_list = ["beatmaps", "paged_embeds", "teams", "misc", "registrations", "lobbies"]
+
+for cog in cog_list:
+    client.load_extension(cog)
 
 
 @client.event
