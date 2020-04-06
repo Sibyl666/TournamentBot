@@ -358,35 +358,6 @@ class Lobbies(commands.Cog):
             write_lobby_db(lobbies)
             await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisindeki hakemlikten ayrıldı.")
 
-    @commands.command(name='addmplink')
-    @commands.has_role("Hakem")
-    async def add_mp_link_to_lobby(self, ctx, lobby_name, mp_link):
-        """
-        Odaya bir Mp Linki ekleyin
-        lobby_name: Eklemek istediğiniz odanın adı
-        mp_link: Maç linki
-        """
-        lobbies = read_lobby_db()
-        
-        if lobby_name not in lobbies:
-            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
-            return
-        
-        if lobbies[lobby_name]["referee_discord_id"] != ctx.author.id:
-            await ctx.send(f"`{lobby_name}` adındaki lobide hakem sen değilsin.")
-            return
-        else:
-            msg_id = lobbies[lobby_name]["msg_id"]
-            channel = discord.utils.get(ctx.message.guild.channels, id=lobi_channel_announce_id)
-            msg = await channel.fetch_message(msg_id)
-            
-            embed = msg.embeds[0].copy()
-            embed.url = mp_link
-            await msg.edit(embed=embed)
-            
-            lobbies[lobby_name]["mp_link"] = mp_link
-            write_lobby_db(lobbies)
-            await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisine mp link eklendi.")
 
 
 def setup(bot):

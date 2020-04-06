@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -37,3 +38,14 @@ def get_map_info(map_id):
     ezpp_data_dup(ezpp_map, osu_file_contents.decode('utf-8'), len(osu_file_contents))
 
     return bmap_dict, ezpp_map
+
+def get_match_info(match_link):
+    
+    key = os.environ["OSU_API_KEY"]
+
+
+    match_id = match_link.split("/")[-1]
+    r = requests.get(f"https://osu.ppy.sh/api/get_match?k={key}&mp={match_id}")
+    match_data = json.loads(r.text)
+
+    return match_data["games"]

@@ -175,6 +175,8 @@ class Mappool(commands.Cog):
             map_info["modpool"] = mod
             map_info["added_by"] = ctx.author.name
             map_info["comment"] = comment
+            map_info["qualifier_scores"] = []
+            map_info["qualifier_message_id"] = None
 
             map_name = f"{bmap_artist} - {bmap_title} [{bmap_version}]"
 
