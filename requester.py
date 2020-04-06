@@ -43,7 +43,6 @@ def get_match_info(match_link):
     
     key = os.environ["OSU_API_KEY"]
 
-
     match_id = match_link.split("/")[-1]
     r = requests.get(f"https://osu.ppy.sh/api/get_match?k={key}&mp={match_id}")
     match_data = json.loads(r.text)
