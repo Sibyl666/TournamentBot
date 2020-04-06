@@ -9,7 +9,7 @@ settings = get_settings()
 
 client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
 
-cog_list = ["beatmaps", "paged_embeds", "teams", "misc", "registrations", "lobbies"]
+cog_list = ["beatmaps", "paged_embeds", "teams", "misc", "registrations", "lobbies", "qualifier_results"]
 
 for cog in cog_list:
     client.load_extension(cog)
@@ -40,3 +40,4 @@ async def on_ready():
 
 
 client.run(os.environ["TOKEN"])
+
