@@ -72,13 +72,13 @@ class Mappool(commands.Cog):
             length = bmap["hit_length"]
             star_rating = bmap["difficulty_rating"]
             if mod == "DT":
-                length = length // 1.5
+                length = int(length // 1.5)
                 bpm = bpm * 1.5
 
             bmap_url = bmap['url']
             bmap_name = f"{bmapset['artist']} - {bmapset['title']} [{bmap['version']}]"
             desc_text += f"▸[{bmap_name}]({bmap_url})\n" \
-                         f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm} ▸SR: {star_rating}* \n\n"
+                         f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm:.1f} ▸SR: {star_rating:.2f}* \n\n"
 
         author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
         embed = discord.Embed(description=desc_text, color=color)
