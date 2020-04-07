@@ -78,7 +78,7 @@ class Mappool(commands.Cog):
             bmap_url = bmap['url']
             bmap_name = f"{bmapset['artist']} - {bmapset['title']} [{bmap['version']}]"
             desc_text += f"▸[{bmap_name}]({bmap_url})\n" \
-                         f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm:.1f} ▸SR: {star_rating:.2f}* \n\n"
+                         f"▸Length: {length // 60}:{length % 60:02d} ▸Bpm: {bpm:.1f} ▸SR: {star_rating}* \n\n"
 
         author_name = f"112'nin Corona Turnuvası Beatmaps in {which_pool} - {mod}"
         embed = discord.Embed(description=desc_text, color=color)

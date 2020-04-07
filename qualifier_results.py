@@ -1,4 +1,5 @@
 import discord
+import math
 from copy import deepcopy
 from discord.ext import commands
 
@@ -7,6 +8,8 @@ from requester import get_match_info
 
 settings = get_settings()
 qualifier_channel_id = 697002041603653663
+max_team_per_page = 8
+
 
 def get_players_with_teams():
     data = read_tournament_db()
@@ -25,27 +28,32 @@ def get_players_with_teams():
         team_list.append(team)
 
     return team_list
- 
+
+def get_message_ids():
+    
+    qualifier_results_db = read_qualifier_results_db()
+    message_list = []
+    for map_id, data in qualifier_results_db.items():
+        if data["qualifier_message_id"] is not None:
+            message_list.append(data["qualifier_message_id"])
+    return message_list
 
 class Results(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.message_list = get_message_ids()
 
-    async def create_embed_for_qualifier(self, ctx, qualifier_results_db, map_id):
+    async def create_embed_for_qualifier(self, qualifier_results_db, map_id, page=1):
         
-        try:
-            scores = deepcopy(qualifier_results_db[map_id]["qualifier_scores"])
-        except KeyError:
-            await ctx.send(f"Aranan map bulunamadı.")
-            return
-
+        scores = deepcopy(qualifier_results_db[map_id]["qualifier_scores"])
         scores.sort(key=lambda x: x["player_1_score"]+x["player_2_score"])
+
         desc_text = ""
-        for index, team in enumerate(scores):
+        for index, team in enumerate(scores[(page-1)*max_team_per_page : page*max_team_per_page]):
 
             total_score = team["player_1_score"] + team["player_2_score"]
-            desc_text += f"**#{index+1}** - `{team['team_name']}`  ▸Toplam Skor: {'{:,}'.format(total_score)}\n" \
+            desc_text += f"**#{index+1+((page-1)*max_team_per_page)}** - `{team['team_name']}`  ▸Toplam Skor: {'{:,}'.format(total_score)}\n" \
                          f" ▸{team['player_1_name']}: {'{:,}'.format(team['player_1_score'])}  ▸{team['player_2_name']}: {'{:,}'.format(team['player_2_score'])}\n \n"
 
         mod = qualifier_results_db[map_id]["modpool"]
@@ -59,9 +67,9 @@ class Results(commands.Cog):
         embed = discord.Embed(description=desc_text, title=f"{artist} {title}[{diff_name}]",
                                   color=color)
         embed.set_author(name=f"112'nin Corona Turnuvası - Sıralama Sonuçları")
-        embed.set_thumbnail(
-            url=settings["mod_icons"][mod])
+        embed.set_thumbnail(url=settings["mod_icons"][mod])
         embed.url = url
+        embed.set_footer(text=f"Page {page} of {math.ceil(len(scores)/max_team_per_page)}")
 
         return embed
 
@@ -71,10 +79,18 @@ class Results(commands.Cog):
     async def show_qualifier_map_results(self, ctx, map_id):
         qualifier_results_db = read_qualifier_results_db()
         
-        embed = await self.create_embed_for_qualifier(ctx, qualifier_results_db, map_id)
+        try:
+            embed = await self.create_embed_for_qualifier(qualifier_results_db, map_id)
+        except KeyError:
+            ctx.send("Aranan map bulunamadı")
+
         msg = await ctx.send(embed=embed)
+        if len(qualifier_results_db[map_id]["qualifier_scores"]) > max_team_per_page:
+            await msg.add_reaction("⬅")
+            await msg.add_reaction("➡")
+
         qualifier_results_db[map_id]["qualifier_message_id"] = msg.id
-    
+        self.message_list.append(msg.id)
         write_qualifier_results_db(qualifier_results_db)
     
     
@@ -130,23 +146,56 @@ class Results(commands.Cog):
                         for index, data in enumerate(qualifier_results_db[game["beatmap_id"]]["qualifier_scores"]):
                             if team["team_name"] == data["team_name"]:
                                 del qualifier_results_db[game["beatmap_id"]]["qualifier_scores"][index]
+                                break
                             
                         qualifier_results_db[game["beatmap_id"]]["qualifier_scores"].append(team)
-
-            
 
             if qualifier_results_db[game["beatmap_id"]]["qualifier_message_id"] is not None:
 
                 channel = discord.utils.get(ctx.message.guild.channels, id=qualifier_channel_id)
                 msg = await channel.fetch_message(qualifier_results_db[game["beatmap_id"]]["qualifier_message_id"])
 
-                embed = await self.create_embed_for_qualifier(ctx, qualifier_results_db, game["beatmap_id"])
-                await msg.edit(embed=embed)            
-
-
+                embed = await self.create_embed_for_qualifier(qualifier_results_db, game["beatmap_id"])
+                await msg.edit(embed=embed)
+                if len(qualifier_results_db[game["beatmap_id"]]["qualifier_scores"]) > max_team_per_page:
+                    await msg.add_reaction("⬅")
+                    await msg.add_reaction("➡")
+                    
         write_qualifier_results_db(qualifier_results_db)
         await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisine mp link eklendi.")
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        
+        if payload.message_id in self.message_list:
+            if payload.member != self.bot.user:
+                channel = discord.utils.get(self.bot.get_all_channels(), id=qualifier_channel_id)
+                msg = await channel.fetch_message(payload.message_id)
+                await msg.remove_reaction(payload.emoji, payload.member)
+                
+                if payload.emoji.name == "➡" or payload.emoji.name == "⬅":
+                    qualifier_results_db = read_qualifier_results_db()
+                    
+                    for map_id, qualifier_data in qualifier_results_db.items():
+                        
+                        if qualifier_data["qualifier_message_id"] == payload.message_id:
+                            max_page = math.ceil(len(qualifier_data["qualifier_scores"]) / max_team_per_page )
+                            
+                            if payload.emoji.name == "➡":
+                                page = qualifier_data["page"] + 1
+                                if page > max_page:
+                                    page = 1
+                            elif payload.emoji.name == "⬅":
+                                page = qualifier_data["page"] - 1
+                                if page < 1:
+                                    page = max_page
+
+                            embed = await self.create_embed_for_qualifier(qualifier_results_db, map_id, page)
+                            await msg.edit(embed=embed)
+                            
+                            qualifier_data["page"] = page
+                            write_qualifier_results_db(qualifier_results_db)
+                            break
 
 def setup(bot):
     bot.add_cog(Results(bot))
