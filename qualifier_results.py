@@ -2,11 +2,11 @@ import discord
 from copy import deepcopy
 from discord.ext import commands
 
-from database import read_mappool_db, write_mappool_db, get_old_maps, get_settings ,read_tournament_db, read_lobby_db, write_lobby_db
+from database import read_qualifier_results_db, write_qualifier_results_db, get_old_maps, get_settings ,read_tournament_db, read_lobby_db, write_lobby_db
 from requester import get_match_info
 
 settings = get_settings()
-qualifier_channel_id = 693913004957368353
+qualifier_channel_id = 697002041603653663
 
 def get_players_with_teams():
     data = read_tournament_db()
@@ -32,9 +32,10 @@ class Results(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def create_embed_for_qualifier(self,ctx,mappool_db,map_id):
+    async def create_embed_for_qualifier(self, ctx, qualifier_results_db, map_id):
+        
         try:
-            scores = deepcopy(mappool_db["map_id"]["qualifier_scores"])
+            scores = deepcopy(qualifier_results_db[map_id]["qualifier_scores"])
         except KeyError:
             await ctx.send(f"Aranan map bulunamadı.")
             return
@@ -43,22 +44,19 @@ class Results(commands.Cog):
         desc_text = ""
         for index, team in enumerate(scores):
 
-            team_name = team["team_name"]
             total_score = team["player_1_score"] + team["player_2_score"]
-            text += f"#{index+1}- `{team_name}` - {total_score}"
+            desc_text += f"**#{index+1}** - `{team['team_name']}`  ▸Toplam Skor: {'{:,}'.format(total_score)}\n" \
+                         f" ▸{team['player_1_name']}: {'{:,}'.format(team['player_1_score'])}  ▸{team['player_2_name']}: {'{:,}'.format(team['player_2_score'])}\n \n"
 
-        mod = mappool_db["map_id"]["modpool"]
+        mod = qualifier_results_db[map_id]["modpool"]
         color = discord.Color.from_rgb(*settings["mod_colors"][mod])
         url = f"https://osu.ppy.sh/b/{map_id}"
 
-        artist = mappool_db["map_id"]["artist"]
-        title = mappool_db["map_id"]["title"]
-        for diff in mappool_db["map_id"]["beatmaps"]:
-            if diff["id"] == map_id:
-                diff_name = diff["version"]
-
-
-        embed = discord.Embed(description=desc_text, title=f"{artist} - {title} - {diff_name}",
+        artist = qualifier_results_db[map_id]["artist"]
+        title = qualifier_results_db[map_id]["title"]
+        diff_name = qualifier_results_db[map_id]["diff_name"]
+            
+        embed = discord.Embed(description=desc_text, title=f"{artist} {title}[{diff_name}]",
                                   color=color)
         embed.set_author(name=f"112'nin Corona Turnuvası - Sıralama Sonuçları")
         embed.set_thumbnail(
@@ -71,14 +69,13 @@ class Results(commands.Cog):
     @commands.command(name="showresult")
     @commands.has_permissions(administrator=True)
     async def show_qualifier_map_results(self, ctx, map_id):
-        mappool_db = read_mappool_db()
+        qualifier_results_db = read_qualifier_results_db()
         
-        embed = self.create_embed_for_qualifier(ctx, mappool_db, map_id)
+        embed = await self.create_embed_for_qualifier(ctx, qualifier_results_db, map_id)
         msg = await ctx.send(embed=embed)
-        
-        mappool_db["map_id"]["qualifier_message_id"] = msg.id
-
-        write_mappool_db(mappool_db)
+        qualifier_results_db[map_id]["qualifier_message_id"] = msg.id
+    
+        write_qualifier_results_db(qualifier_results_db)
     
     
     @commands.command(name='addmplink')
@@ -100,7 +97,7 @@ class Results(commands.Cog):
             return
         else:
             msg_id = lobbies[lobby_name]["msg_id"]
-            channel = discord.utils.get(ctx.message.guild.channels, id=695995975189135430)#add it to settings
+            channel = discord.utils.get(ctx.message.guild.channels, id=qualifier_channel_id)#add it to settings
             msg = await channel.fetch_message(msg_id)
             
             embed = msg.embeds[0].copy()
@@ -112,33 +109,42 @@ class Results(commands.Cog):
             
 
         match_data = get_match_info(mp_link)
-        mappool_db = read_mappool_db()
+        qualifier_results_db = read_qualifier_results_db()
         teams = get_players_with_teams()
 
         for game in match_data:
             current_teams = deepcopy(teams)
-            update_list = []
             for scores in game["scores"]:
                 for team in current_teams:
-                    if scores["user_id"] == team["player_1_id"]:
+                    
+                    team["player_1_score"] = 0
+                    team["player_2_score"] = 0 
+                    write = False
+                    if scores["user_id"] == str(team["player_1_id"]):
                         team["player_1_score"] = int(scores["score"])
-                    if scores["user_id"] == team["player_2_id"]:
+                        write = True
+                    if scores["user_id"] == str(team["player_2_id"]):
                         team["player_2_score"] = int(scores["score"])
-                update_list.append(update_list)
+                        write = True
+                    if write:
+                        for index, data in enumerate(qualifier_results_db[game["beatmap_id"]]["qualifier_scores"]):
+                            if team["team_name"] == data["team_name"]:
+                                del qualifier_results_db[game["beatmap_id"]]["qualifier_scores"][index]
+                            
+                        qualifier_results_db[game["beatmap_id"]]["qualifier_scores"].append(team)
 
-            mappool_db[game["beatmap_id"]]["qualifier_scores"] += update_list
+            
 
-
-            if mappool_db[game["beatmap_id"]]["qualifier_message_id"] is not None:
+            if qualifier_results_db[game["beatmap_id"]]["qualifier_message_id"] is not None:
 
                 channel = discord.utils.get(ctx.message.guild.channels, id=qualifier_channel_id)
-                msg = await channel.fetch_message(msg_id)
-                
-                embed = self.create_embed_for_qualifier(ctx, mappool_db, game["beatmap_id"])
+                msg = await channel.fetch_message(qualifier_results_db[game["beatmap_id"]]["qualifier_message_id"])
+
+                embed = await self.create_embed_for_qualifier(ctx, qualifier_results_db, game["beatmap_id"])
                 await msg.edit(embed=embed)            
 
 
-        write_mappool_db(mappool_db)
+        write_qualifier_results_db(qualifier_results_db)
         await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisine mp link eklendi.")
 
 

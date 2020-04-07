@@ -6,6 +6,41 @@ old_maps_filename = "old_maps.tsv"
 tournament_db_file = "turnuva.json"
 lobby_db_file = "lobbies.json"
 settings_file = "settings.json"
+qualifier_results_file = "qualifier_results.json"
+
+def read_qualifier_results_db():
+    if not os.path.exists(qualifier_results_file):
+
+        mappool_db = read_mappool_db()
+        empty_db = {}
+        for map_id, map_data in mappool_db.items():
+            
+            map_info = {}
+            map_info["qualifier_scores"] = []
+            map_info["qualifier_message_id"] = None
+            map_info["modpool"] = map_data["modpool"]
+            map_info["artist"] = map_data["artist"]
+            map_info["title"] = map_data["title"]
+            for diff in map_data["beatmaps"]:
+                if str(diff["id"]) == map_id:
+                    map_info["diff_name"] = diff["version"]
+            
+            empty_db[map_id] = map_info
+
+        with open(qualifier_results_file, "w", encoding='utf-8') as f:
+            json.dump(empty_db, f)
+        return empty_db
+
+    with open(qualifier_results_file, "r", encoding='utf-8') as f:
+        db = json.load(f)
+
+    return db
+
+def write_qualifier_results_db(db):
+    with open(qualifier_results_file, "w", encoding='utf-8') as f:
+        json.dump(db, f, indent=2)
+
+    return
 
 
 def read_lobby_db():
