@@ -40,11 +40,15 @@ def get_map_info(map_id):
     return bmap_dict, ezpp_map
 
 def get_match_info(match_link):
-    
-    key = os.environ["OSU_API_KEY"]
+    key = os.environ["OSU_MP_LINK"] 
 
     match_id = match_link.split("/")[-1]
     r = requests.get(f"https://osu.ppy.sh/api/get_match?k={key}&mp={match_id}")
     match_data = json.loads(r.text)
 
-    return match_data["games"]
+    matches_without_abort = []
+    for index, game in enumerate(match_data["games"]):
+        if index == len(match_data["games"]) or match_data["games"][index+1]["beatmap_id"] != game["beatmap_id"]:
+            matches_without_abort.append(game)
+
+    return matches_without_abort
