@@ -8,7 +8,7 @@ from database import read_qualifier_results_db, write_qualifier_results_db, get_
 from requester import get_match_info
 
 settings = get_settings()
-qualifier_channel_id = 693913004957368353
+qualifier_channel_id = 697002041603653663
 max_team_per_page = 8
 
 
