@@ -7,7 +7,6 @@ from spreadsheet import create_new_qualifier_sheet
 from backports.datetime_fromisoformat import MonkeyPatch
 MonkeyPatch.patch_fromisoformat()
 
-
 settings = get_settings()
 
 fake = Faker('tr_TR')
@@ -58,7 +57,7 @@ class Lobbies(commands.Cog):
             name = lobby["name"]
             teams = lobby["teams"]
             
-            remains = date - datetime.now()
+            remains = date - datetime.utcnow() - timedelta(hours=3)
             if remains.total_seconds() > 0:
                 desc_text = ""
                 for team_name, players in teams.items():
