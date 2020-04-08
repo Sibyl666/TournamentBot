@@ -9,7 +9,7 @@ settings = get_settings()
 
 client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
 
-cog_list = ["beatmaps", "paged_embeds", "teams", "misc", "lobbies", "qualifier_results"]
+cog_list = ["beatmaps", "paged_embeds", "misc", "lobbies", "qualifier_results"]
 
 for cog in cog_list:
     client.load_extension(cog)
