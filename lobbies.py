@@ -3,6 +3,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
+from spreadsheet import create_new_qualifier_sheet
 
 
 settings = get_settings()
@@ -206,7 +207,7 @@ class Lobbies(commands.Cog):
                 osu_user2 = user["username"]
 
         user1 = [team["user1"], osu_user1]
-        user2 = [team["user1"], osu_user2]
+        user2 = [team["user2"], osu_user2]
         team_players = [user1, user2]
         lobbies[lobby_name]["teams"][team_name] = team_players
         lobby_teams = lobbies[lobby_name]["teams"]
@@ -358,6 +359,45 @@ class Lobbies(commands.Cog):
             write_lobby_db(lobbies)
             await ctx.send(f"`{ctx.author.name}`, `{lobby_name}` lobisindeki hakemlikten ayrıldı.")
 
+    @commands.command(name='createrefsheet')
+    @commands.has_role("Hakem")
+    async def create_ref_sheet(self, ctx, lobby_name):
+        lobbies = read_lobby_db()
+
+        if lobby_name not in lobbies:
+            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
+            return
+        
+        if lobbies[lobby_name]["referee_discord_id"] != ctx.author.id:
+            await ctx.send(f"`{lobby_name}` adındaki lobide hakem sen değilsin.")
+            return
+        else:
+            referee = lobbies[lobby_name]["referee"]
+            teams = lobbies[lobby_name]["teams"]
+            url = create_new_qualifier_sheet(lobby_name, referee, teams)
+            await ctx.send(f"Sıralama Hakem Sheet oluşturuldu! Linkten ulaşabilirsin!\n" \
+                           f"<{url}>")
+
+    @commands.command(name='pinglobby')
+    @commands.has_role("Hakem")
+    async def ping_lobby(self, ctx, lobby_name):
+        lobbies = read_lobby_db()
+
+        if lobby_name not in lobbies:
+            await ctx.send(f"`{lobby_name}` adında bir lobi yok..")
+            return
+        
+        if lobbies[lobby_name]["referee_discord_id"] != ctx.author.id:
+            await ctx.send(f"`{lobby_name}` adındaki lobide hakem sen değilsin.")
+            return
+        else:
+            teams = lobbies[lobby_name]["teams"]
+            msg_team_part = ""
+            for team_name, team_data in teams.items():
+                msg_team_part += f" `{team_name}` - <@{team_data[0][0]}> , <@{team_data[1][0]}>"
+                
+            await ctx.send(f"Hakem {ctx.author.mention} , `{lobby_name}` adlı lobiyi pingliyor:\n{msg_team_part}")
+                  
 
 
 def setup(bot):

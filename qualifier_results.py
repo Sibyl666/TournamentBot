@@ -1,5 +1,6 @@
 import discord
 import math
+import time
 from copy import deepcopy
 from discord.ext import commands
 
@@ -43,6 +44,7 @@ class Results(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.message_list = get_message_ids()
+        self.last_executions = {}
 
     async def create_embed_for_qualifier(self, qualifier_results_db, map_id, page=1):
         
@@ -173,9 +175,13 @@ class Results(commands.Cog):
                 msg = await channel.fetch_message(payload.message_id)
                 await msg.remove_reaction(payload.emoji, payload.member)
                 
-                if payload.emoji.name == "➡" or payload.emoji.name == "⬅":
+                message_id_string = str(payload.message_id)
+                if message_id_string not in self.last_executions:
+                    self.last_executions[message_id_string] = 0
+
+                if (payload.emoji.name == "➡" or payload.emoji.name == "⬅") and time.time() > self.last_executions[message_id_string]+5:
                     qualifier_results_db = read_qualifier_results_db()
-                    
+
                     for map_id, qualifier_data in qualifier_results_db.items():
                         
                         if qualifier_data["qualifier_message_id"] == payload.message_id:
@@ -193,6 +199,8 @@ class Results(commands.Cog):
                             embed = await self.create_embed_for_qualifier(qualifier_results_db, map_id, page)
                             await msg.edit(embed=embed)
                             
+                            self.last_executions[message_id_string] = time.time()
+
                             qualifier_data["page"] = page
                             write_qualifier_results_db(qualifier_results_db)
                             break
