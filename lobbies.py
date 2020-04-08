@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
 from spreadsheet import create_new_qualifier_sheet
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+#from backports.datetime_fromisoformat import MonkeyPatch
+#MonkeyPatch.patch_fromisoformat()
 
 
 settings = get_settings()
@@ -179,12 +179,13 @@ class Lobbies(commands.Cog):
         users = read_tournament_db()
         author_id = ctx.author.id
         team = is_user_captain(author_id, users)
-        team_name = team["name"]
+        
 
         if team is None:
             await ctx.send("Takımın yok veya takım kaptanı değilsin...")
             return
 
+        team_name = team["name"]
         lobbies = read_lobby_db()
 
         if lobby_name not in lobbies:
