@@ -251,13 +251,13 @@ class Lobbies(commands.Cog):
         users = read_tournament_db()
         author_id = ctx.author.id
         team = is_user_captain(author_id, users)
-        team_name = team["name"]
 
         if team is None:
             await ctx.send("Takımın yok veya takım kaptanı değilsin...")
             return
 
         lobbies = read_lobby_db()
+        team_name = team["name"]
 
         old_lobby = None
         for k, v in lobbies.items():
