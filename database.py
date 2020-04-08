@@ -12,12 +12,13 @@ def read_qualifier_results_db():
     if not os.path.exists(qualifier_results_file):
 
         mappool_db = read_mappool_db()
-        empty_db = {}
+        empty_db = {"maps":{}, "final_result":{"message_id":None, "page":1, "final_scores": []}}
         for map_id, map_data in mappool_db.items():
             
             map_info = {}
             map_info["qualifier_scores"] = []
             map_info["qualifier_message_id"] = None
+            map_info["page"] = 1
             map_info["modpool"] = map_data["modpool"]
             map_info["artist"] = map_data["artist"]
             map_info["title"] = map_data["title"]
@@ -25,7 +26,7 @@ def read_qualifier_results_db():
                 if str(diff["id"]) == map_id:
                     map_info["diff_name"] = diff["version"]
             
-            empty_db[map_id] = map_info
+            empty_db["maps"][map_id] = map_info
 
         with open(qualifier_results_file, "w", encoding='utf-8') as f:
             json.dump(empty_db, f)
