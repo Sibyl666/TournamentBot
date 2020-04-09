@@ -9,6 +9,7 @@ from requester import get_match_info
 
 settings = get_settings()
 qualifier_channel_id = 697002041603653663
+lobby_channel_id = 695995975189135430
 max_team_per_page = 8
 
 
@@ -214,7 +215,7 @@ class Results(commands.Cog):
             return
         else:
             msg_id = lobbies[lobby_name]["msg_id"]
-            channel = discord.utils.get(ctx.message.guild.channels, id=qualifier_channel_id)#add it to settings
+            channel = discord.utils.get(ctx.message.guild.channels, id=lobby_channel_id)#add it to settings
             msg = await channel.fetch_message(msg_id)
             
             embed = msg.embeds[0].copy()
