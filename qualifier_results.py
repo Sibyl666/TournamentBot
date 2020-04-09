@@ -24,9 +24,11 @@ def get_players_with_teams():
             if team_p1 == user["discord_id"]:
                 team["player_1_id"] = user["id"]
                 team["player_1_name"] = user["username"]
+                team["player_1_score"] = 0
             if team_p2 == user["discord_id"]:
                 team["player_2_id"] = user["id"]
                 team["player_2_name"] = user["username"]
+                team["player_1_score"] = 0
         team_list.append(team)
 
     return team_list
@@ -54,8 +56,7 @@ def get_message_ids():
             message_list.append(data["qualifier_message_id"])
     return message_list
 
-def calculate_final_results():
-    qualifier_results_db = read_qualifier_results_db()
+def calculate_final_results(qualifier_results_db):
     maps_db = qualifier_results_db["maps"]
 
     team_list = get_players_for_total_results()
@@ -66,7 +67,7 @@ def calculate_final_results():
         for index, score in enumerate(scores):
             for team in team_list:
                 if team["team_name"] == score["team_name"]:
-                    team["total_score"] += index
+                    team["total_score"] += index + 1
                     break
 
     return_array = []
@@ -123,7 +124,7 @@ class Results(commands.Cog):
                 desc_text +=f"__**{seeds[ ((page-1)*2)+index//4 ]}**__"
             elif page>2:
                 desc_text +=f"__**{seeds[4]}**__"
-            desc_text += f"**▸#{index+1+((page-1)*max_team_per_page)}** - `{team['team_name']}` - {team['total_score']}\n"
+            desc_text += f"**▸#{index+1+((page-1)*max_team_per_page)}** - `{team['team_name']}` - {'{:.2f}'.format(team['total_score'])}\n"
         
         
         embed = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
@@ -235,26 +236,27 @@ class Results(commands.Cog):
 
         for game in match_data:
             current_teams = deepcopy(teams)
-            for scores in game["scores"]:
-                for team in current_teams:
-                    
-                    team["player_1_score"] = 0
-                    team["player_2_score"] = 0 
-                    write = False
-                    if scores["user_id"] == str(team["player_1_id"]):
-                        team["player_1_score"] = int(scores["score"])
-                        write = True
-                    if scores["user_id"] == str(team["player_2_id"]):
-                        team["player_2_score"] = int(scores["score"])
-                        write = True
-                    if write:
-                        for index, data in enumerate(maps_db[game["beatmap_id"]]["qualifier_scores"]):
-                            if team["team_name"] == data["team_name"]:
-                                del maps_db[game["beatmap_id"]]["qualifier_scores"][index]
-                                break
+            for team in current_teams:
+                write = False
+                for scores in game["scores"]:
+                    score = int(scores["score"])
+                    if score != 0:
+                        if scores["user_id"] == str(team["player_1_id"]):
+                            team["player_1_score"] = int(scores["score"])
+                            write = True
+                        if scores["user_id"] == str(team["player_2_id"]):
+                            team["player_2_score"] = int(scores["score"])
+                            write = True
+                        
+                if write:
+                    for index, data in enumerate(maps_db[game["beatmap_id"]]["qualifier_scores"]):
+                        if team["team_name"] == data["team_name"] and data["player_1_score"] :
+                            del maps_db[game["beatmap_id"]]["qualifier_scores"][index]
+                            break
                             
-                        maps_db[game["beatmap_id"]]["qualifier_scores"].append(team)
-                        maps_db[game["beatmap_id"]]["qualifier_scores"].sort(key=lambda x: x["player_1_score"]+x["player_2_score"])
+                    maps_db[game["beatmap_id"]]["qualifier_scores"].append(team)
+            
+            maps_db[game["beatmap_id"]]["qualifier_scores"].sort(key=lambda x: x["player_1_score"]+x["player_2_score"], reverse=True)
 
             if maps_db[game["beatmap_id"]]["qualifier_message_id"] is not None:
 
@@ -265,9 +267,9 @@ class Results(commands.Cog):
                 if len(maps_db[game["beatmap_id"]]["qualifier_scores"]) > max_team_per_page:
                     await msg.add_reaction("⬅")
                     await msg.add_reaction("➡")
-            
+
         final_results_db = qualifier_results_db["final_result"]
-        final_results_db["final_scores"] = calculate_final_results()
+        final_results_db["final_scores"] = calculate_final_results(qualifier_results_db)
 
         if final_results_db["message_id"] is not None:
             msg = await channel.fetch_message(final_results_db["message_id"])
