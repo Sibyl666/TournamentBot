@@ -115,12 +115,17 @@ class Results(commands.Cog):
 
     async def create_embed_for_final_results(self, total_scores, page=1):
         desc_text = ""
+        
+        seeds = ["Top Seed", "High Seed", "Mid Seed", "Low Seed", "Elenenler"]
         for index, team in enumerate(total_scores[(page-1)*max_team_per_page : page*max_team_per_page]):
+            if index %4 == 0 and page <= 2:
+                desc_text +=f"__**{seeds[ ((page-1)*2)+index//4 ]}**__"
+            elif page>2:
+                desc_text +=f"__**{seeds[4]}**__"
             desc_text += f"**▸#{index+1+((page-1)*max_team_per_page)}** - `{team['team_name']}` - {team['total_score']}\n"
         
-        seeds = ["Top Seed", "High Seed", "Mid Seed", "Low Seed", "Elenenler", "Elenenler", "Elenenler"]
-
-        embed = discord.Embed(description=desc_text, title=seeds[page-1], color=discord.Color.from_rgb(*settings["tournament_color"]))
+        
+        embed = discord.Embed(description=desc_text, color=discord.Color.from_rgb(*settings["tournament_color"]))
         embed.set_author(name=f"112'nin Corona Turnuvası - Sıralama Sonuçları")
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
         embed.set_footer(text=f"Page {page} of {math.ceil(len(total_scores)/max_team_per_page)}")

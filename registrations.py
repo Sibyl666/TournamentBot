@@ -66,6 +66,7 @@ class Registrations(commands.Cog):
         return
 
     @commands.command(name='register')
+    @commands.has_permissions(administrator=True)
     async def register_tourney(self, ctx, osu_user1):
         """
         Turnuvaya katılan kişiyi listeye ekler.
@@ -144,6 +145,7 @@ class Registrations(commands.Cog):
         return
 
     @commands.command(name='leave')
+    @commands.has_permissions(administrator=True)
     async def remove_user(self, ctx):
         """
         Komutu kullanan kişiyi turnuvadan çıkarır.
