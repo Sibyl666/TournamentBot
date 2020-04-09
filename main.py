@@ -23,18 +23,27 @@ async def on_ready():
 
     print(f"Checking player roles..")
     for member in guild.members:
+        id = member.id
         if player_role in member.roles:
-            id = str(member.id)
-            if id not in get_players_by_discord():
+            player_found = False
+            for team in db["teams"]:
+                user1 = team["user1"]
+                user2 = team["user2"]
+                if (id == user1 or id == user2):
+                    player_found = True
+
+            if not player_found:
                 print(f"Removing {player_role} role from {member}")
                 await member.remove_roles(player_role)
 
-    for user in db["users"]:
-        discord_id = user["discord_id"]
-        discord_user = discord.utils.get(guild.members, id=discord_id)
-        if player_role not in discord_user.roles:
-            print(f"Adding {player_role} role to {discord_user}")
-            await discord_user.add_roles(player_role)
+        elif player_role not in member.roles:
+            for team in db["teams"]:
+                user1 = team["user1"]
+                user2 = team["user2"]
+                if (id == user1 or id == user2):
+                    print(f"Adding {player_role} role to {member}")
+                    await member.add_roles(player_role)
+
     print(f"Bot Started!!")
     return
 
