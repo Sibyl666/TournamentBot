@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
 from spreadsheet import create_new_qualifier_sheet
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+#from backports.datetime_fromisoformat import MonkeyPatch
+#MonkeyPatch.patch_fromisoformat()
 
 settings = get_settings()
 
@@ -14,7 +14,7 @@ fake = Faker('tr_TR')
 LOBBY_TEAM_LIMIT = 7
 test = 693913004957368353
 servis = 695995975189135430
-lobi_channel_announce_id = 695995975189135430
+lobi_channel_announce_id = 693913004957368353
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
@@ -265,7 +265,9 @@ class Lobbies(commands.Cog):
                 old_lobby = k
 
         if old_lobby is not None:
-            team_to_add = lobbies[old_lobby]["teams"].pop(team_name)
+            removed_team = lobbies[old_lobby]["teams"].pop(team_name)
+            for key in removed_team:
+                removed_team_name = key
         else:
             await ctx.send("Henüz bir lobiye kayıtlı değilsin. `?lobbyregister` komutunu kullan.")
             return
@@ -295,7 +297,7 @@ class Lobbies(commands.Cog):
         await old_msg.edit(embed=old_embed)
 
         write_lobby_db(lobbies)
-        await ctx.send(f"`{team_name}` takımı `{old_lobby}` lobisinden ayrıldı.")
+        await ctx.send(f"`{removed_team_name}` takımı `{old_lobby}` lobisinden ayrıldı.")
         return
 
 
