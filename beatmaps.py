@@ -109,9 +109,9 @@ class Mappool(commands.Cog):
                                "Ex. `?mappool add https://osu.ppy.sh/beatmapsets/170942#osu/611679 qf NM`")
                 return
 
-            pools = ["QF", "W1", "W2"]
+            pools = ["QF", "W1", "W2","W3"]
             if which_pool not in pools:
-                await ctx.send(f"Mappools can only be QF, W1 or W2.\n"
+                await ctx.send(f"Mappools can only be QF, W1, W2 or W3.\n"
                                f"You wanted to add to {which_pool}. There's no pool option for that.")
                 return
 
@@ -182,6 +182,8 @@ class Mappool(commands.Cog):
 
             if which_pool == "QF":
                 max_maps = [3, 2, 2, 2]
+            elif which_pool == "W1":
+                max_maps = [4, 2, 2, 3, 2, 1]
             else:
                 max_maps = [5, 3, 3, 3, 3, 1]
 
