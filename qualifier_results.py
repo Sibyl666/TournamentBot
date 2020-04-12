@@ -296,7 +296,7 @@ class Results(commands.Cog):
                 if message_id_string not in self.last_executions:
                     self.last_executions[message_id_string] = 0
 
-                if (payload.emoji.name == "➡" or payload.emoji.name == "⬅") and time.time() > self.last_executions[message_id_string]+5:
+                if (payload.emoji.name == "➡" or payload.emoji.name == "⬅") and time.time() > self.last_executions[message_id_string]+3:
                     qualifier_results_db = read_qualifier_results_db()
                     maps_db = qualifier_results_db["maps"]
                     final_results_db = qualifier_results_db["final_result"]
