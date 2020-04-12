@@ -120,7 +120,7 @@ class Results(commands.Cog):
         
         seeds = ["Top Seed", "High Seed", "Mid Seed", "Low Seed", "Elenenler"]
         if page>2:
-            desc_text +=f"__**{seeds[4]}**__"
+            desc_text +=f"__**{seeds[4]}**__ \n"
         for index, team in enumerate(total_scores[(page-1)*max_team_per_page : page*max_team_per_page]):
             if index %4 == 0 and page <= 2:
                 desc_text +=f"__**{seeds[ ((page-1)*2)+index//4 ]}**__ \n"
