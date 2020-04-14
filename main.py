@@ -23,7 +23,7 @@ async def on_ready():
 
     qualified_players = []
     for team in qf_results:
-        for _team in teams_db:
+        for _team in teams_db["teams"]:
             if _team["name"] == team["team_name"]:
                 qualified_players.append(_team["user1"])
                 qualified_players.append(_team["user2"])
