@@ -3,9 +3,10 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from database import get_settings, read_lobby_db, write_lobby_db, read_tournament_db
 from faker import Faker
+
 from spreadsheet import create_new_qualifier_sheet
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+#from backports.datetime_fromisoformat import MonkeyPatch
+#MonkeyPatch.patch_fromisoformat()
 
 settings = get_settings()
 

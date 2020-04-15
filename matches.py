@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 from database import get_settings, read_tournament_db, read_match_db, write_match_db, read_mappool_db
 from spreadsheet import create_new_match_sheet, get_sheet_data
 
+from backports.datetime_fromisoformat import MonkeyPatch
+MonkeyPatch.patch_fromisoformat()
+
+
+
 settings = get_settings()
 match_channel = 700035482725384285
 
