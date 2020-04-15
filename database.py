@@ -50,7 +50,7 @@ def read_qualifier_results_db():
             empty_db["maps"][map_id] = map_info
 
         with open(qualifier_results_file, "w", encoding='utf-8') as f:
-            json.dump(empty_db, f)
+            json.dump(empty_db, f, indent=2)
         return empty_db
 
     with open(qualifier_results_file, "r", encoding='utf-8') as f:
