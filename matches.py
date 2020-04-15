@@ -469,7 +469,7 @@ class Matches(commands.Cog):
 
             date_string = match_date.strftime("%d/%m/%Y - %H:%M, %a")
             
-            text = f"Maç zamanı değiştirildi! Yeni zaman: `{date_string}`.\n"
+            text = f"`{match_name}` maçının zamanı değiştirildi! Yeni zaman: `{date_string}`.\n"
             referee_id = matches[match_name]["referee"]["discord_id"]
             if referee_id is not None:
                 text += f"<@{referee_id}> maça yeni saatinde hakemlik yapamayacaksan `?refmatchleave {match_name}` komutuyla maçı bırakabilirsin."
