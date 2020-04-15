@@ -410,6 +410,10 @@ class Matches(commands.Cog):
             embed = await self.create_embed_for_match(match_name, matches[match_name])
             await msg.edit(embed=embed)
 
+            write_match_db(matches)
+            await ctx.send(f"{team} kazandı sayıldı. Eğer yanlış yazdıysanız komutu tekrar kullanarak düzeltebilirsiniz.")
+
+
     @commands.command(name='pingmatch')
     @commands.has_role("Hakem")
     async def ping_match(self, ctx, match_name):
@@ -430,9 +434,46 @@ class Matches(commands.Cog):
             teams = matches[match_name]["teams"]
             msg_team_part = ""
             for team_name, team_data in teams.items():
-                msg_team_part += f" `{team_name}` - <@{team_data['user_1_id']}> , <@{team_data['user_2_id']}>"
+                msg_team_part += f" `{team_name}` - <@{team_data['user_1_discord_id']}> , <@{team_data['user_2_discord_id']}>"
                 
             await ctx.send(f"Hakem {ctx.author.mention} , `{match_name}` adlı lobiyi pingliyor:\n{msg_team_part}")
+
+
+    @commands.command(name='newtime')
+    @commands.has_permissions(administrator=True)
+    async def change_match_time(self, ctx, match_name, *time):
+        """
+        Maç saatini değiştirin
+        match_name: Değiştirmek istediğiniz odanın adı.
+        """
+        matches = read_match_db()
+        
+        if match_name not in matches:
+            await ctx.send(f"`{match_name}` adında bir maç yok..")
+            return
+        
+        if matches[match_name]["referee"]["discord_id"] != ctx.author.id:
+            await ctx.send(f"`{match_name}` adındaki maçta hakem sen değilsin.")
+            return
+        else:
+            time = " ".join(time)
+            match_date = datetime.strptime(time, "%d/%m %H:%M")
+            match_date = match_date.replace(year=2020)
+
+            matches[match_name]["date"] = match_date
+
+            msg_id = matches[match_name]["message_id"]
+            channel = discord.utils.get(ctx.message.guild.channels, id=match_channel)
+            msg = await channel.fetch_message(msg_id)
+            embed = await self.create_embed_for_match(match_name, matches[match_name])
+            await msg.edit(embed=embed)
+
+            date_string = match_date.strftime("%d/%m/%Y - %H:%M, %a")
+            referee_id = matches[match_name]["referee"]["discord_id"]
+
+            await ctx(f"Maç zamanı değiştirildi! Yeni zaman: `{date_string}`.\n" \
+                      f"<@{referee_id}> maça yeni saatinde hakemlik yapamayacaksan `?refmatchleave {match_name}` komutuyla maçı bırakabilirsin.")
+
 
 def setup(bot):
     bot.add_cog(Matches(bot))
