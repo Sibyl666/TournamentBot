@@ -7,6 +7,27 @@ tournament_db_file = "turnuva.json"
 lobby_db_file = "lobbies.json"
 settings_file = "settings.json"
 qualifier_results_file = "qualifier_results.json"
+matches_db_file = "matches.json"
+
+
+def read_match_db():
+    if not os.path.exists(matches_db_file):
+        with open(matches_db_file, "w", encoding='utf-8') as f:
+            json.dump({}, f)
+        return {}
+
+    with open(matches_db_file, "r", encoding='utf-8') as f:
+        db = json.load(f)
+
+    return db
+
+def write_match_db(db):
+    with open(matches_db_file, "w", encoding='utf-8') as f:
+        json.dump(db, f, indent=2)
+
+    return
+
+
 
 def read_qualifier_results_db():
     if not os.path.exists(qualifier_results_file):
