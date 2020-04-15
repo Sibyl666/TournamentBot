@@ -5,8 +5,8 @@ from database import get_settings, read_lobby_db, write_lobby_db, read_tournamen
 from faker import Faker
 
 from spreadsheet import create_new_qualifier_sheet
-#from backports.datetime_fromisoformat import MonkeyPatch
-#MonkeyPatch.patch_fromisoformat()
+from backports.datetime_fromisoformat import MonkeyPatch
+MonkeyPatch.patch_fromisoformat()
 
 settings = get_settings()
 
