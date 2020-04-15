@@ -468,11 +468,17 @@ class Matches(commands.Cog):
             embed = await self.create_embed_for_match(match_name, matches[match_name])
             await msg.edit(embed=embed)
 
-            date_string = match_date.strftime("%d/%m/%Y - %H:%M, %a")
-            referee_id = matches[match_name]["referee"]["discord_id"]
+            write_match_db(matches)
 
-            await ctx(f"Maç zamanı değiştirildi! Yeni zaman: `{date_string}`.\n" \
-                      f"<@{referee_id}> maça yeni saatinde hakemlik yapamayacaksan `?refmatchleave {match_name}` komutuyla maçı bırakabilirsin.")
+            date_string = match_date.strftime("%d/%m/%Y - %H:%M, %a")
+            
+            text = f"Maç zamanı değiştirildi! Yeni zaman: `{date_string}`.\n"
+            referee_id = matches[match_name]["referee"]["discord_id"]
+            if referee_id is not None:
+                text += f"<@{referee_id}> maça yeni saatinde hakemlik yapamayacaksan `?refmatchleave {match_name}` komutuyla maçı bırakabilirsin."
+
+            
+            await ctx.send(text)
 
 
 def setup(bot):
