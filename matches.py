@@ -457,7 +457,7 @@ class Matches(commands.Cog):
             match_date = datetime.strptime(time, "%d/%m %H:%M")
             match_date = match_date.replace(year=2020)
 
-            matches[match_name]["date"] = match_date
+            matches[match_name]["date"] = match_date.isoformat()
 
             msg_id = matches[match_name]["message_id"]
             channel = discord.utils.get(ctx.message.guild.channels, id=match_channel)
