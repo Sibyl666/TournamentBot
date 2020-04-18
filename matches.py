@@ -65,6 +65,25 @@ class Matches(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
 
+    @commands.command(name='showmatches')
+    async def show_all_matches(self, ctx):
+        
+        desc_text = ""
+        matches = read_match_db()
+        matches.sort(key=lambda x: datetime.fromisoformat(x["date"]))
+
+        print("matches")
+
+        embed = discord.Embed(description=desc_text,
+                              color=discord.Color.from_rgb(*settings["tournament_color"]))
+        embed.set_author(name="112'nin Corona Turnuvası - Qualifier Lobbies!")
+        embed.set_thumbnail(
+            url="https://cdn.discordapp.com/attachments/520370557531979786/693448457154723881/botavatar.png")
+
+        await ctx.send(embed=embed)
+
+
+
     async def create_embed_for_match(self, match_name, match_data):
 
         match_date = datetime.fromisoformat(match_data["date"])
@@ -359,7 +378,7 @@ class Matches(commands.Cog):
             mp_link, new_data = get_sheet_data(matches[match_name]["sheet_id"])
             matches[match_name]["mp_link"] = mp_link
             for key, data in new_data.items():
-                matches["1"]["teams"][key].update(data)
+                matches[match_name]["teams"][key].update(data)
 
             msg_id = matches[match_name]["message_id"]
             channel = discord.utils.get(ctx.message.guild.channels, id=match_channel)
