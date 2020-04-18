@@ -117,7 +117,7 @@ class Matches(commands.Cog):
                 field_text += f"▸Roll: {team_data['roll']}\n"
 
             if len(team_data["bans"]) > 0 :
-                bans_text = ', '.join(team_data['bans'])
+                bans_text = ' '.join(team_data['bans'])
                 field_text += f"▸Bans: {bans_text}" 
 
             embed.add_field(name=team_colored_name[index], value=field_text, inline=True)    
