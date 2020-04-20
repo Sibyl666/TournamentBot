@@ -70,7 +70,7 @@ class Mappool(commands.Cog):
             bmap = next(item for item in bmapset["beatmaps"] if item["id"] == int(bmap_id))
             bpm = bmap["bpm"]
             length = bmap["hit_length"]
-            star_rating = bmap["difficulty_rating"]
+            star_rating = float(bmap["difficulty_rating"])
             if mod == "DT":
                 length = int(length // 1.5)
                 bpm = bpm * 1.5
