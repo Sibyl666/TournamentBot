@@ -404,10 +404,7 @@ class Matches(commands.Cog):
         if match_name not in matches:
             await ctx.send(f"`{match_name}` adında bir maç yok..")
             return
-        
-        if matches[match_name]["referee"]["discord_id"] != ctx.author.id:
-            await ctx.send(f"`{match_name}` adındaki maçta hakem sen değilsin.")
-            return
+    
 
         teams = list(matches[match_name]["teams"].keys())
         if team not in teams:
