@@ -26,7 +26,7 @@ async def on_ready():
     qualified_players = []
     for team in teams_not_eliminated:
         for _team in teams_db["teams"]:
-            if _team["name"] == team["team_name"]:
+            if _team["name"] == team:
                 qualified_players.append(_team["user1"])
                 qualified_players.append(_team["user2"])
 
