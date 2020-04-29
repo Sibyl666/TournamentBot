@@ -37,7 +37,7 @@ async def on_ready():
                 await member.remove_roles(player_role)
         else:
             if member.id in qualified_players:
-                print(f"Removing role from: {member}")
+                print(f"Giving role to: {member}")
                 await member.add_roles(player_role)
 
     print(f"Bot started!")
