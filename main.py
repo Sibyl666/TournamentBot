@@ -8,7 +8,7 @@ settings = get_settings()
 
 client = commands.Bot(command_prefix=settings['prefix'], case_insensitive=True)
 
-cog_list = ["beatmaps", "paged_embeds", "misc", "lobbies", "qualifier_results","registrations", "matches"]
+cog_list = ["beatmaps", "paged_embeds", "misc", "lobbies", "qualifier_results", "registrations", "matches"]
 
 for cog in cog_list:
     client.load_extension(cog)
@@ -17,12 +17,14 @@ for cog in cog_list:
 @client.event
 async def on_ready():
     teams_db = read_tournament_db()
-    qf_results = read_qualifier_results_db()["final_result"]["final_scores"][:16]
+    teams_not_eliminated = ["Team Big Chungus", "SARS-CoV-3", "ali vefa fanclub", "isim bulamadık", "nE",
+                            "NEŞESİNE YAŞAM", "1.yiz Kasmayın", "kms", "i may be stupid", ".`**HIDDEN**`.", "Zurna",
+                            "bucocukamerikalı"]
     guild = client.get_guild(402213530599948299)
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
     qualified_players = []
-    for team in qf_results:
+    for team in teams_not_eliminated:
         for _team in teams_db["teams"]:
             if _team["name"] == team["team_name"]:
                 qualified_players.append(_team["user1"])
@@ -43,4 +45,3 @@ async def on_ready():
 
 
 client.run(os.environ["TOKEN"])
-
