@@ -17,9 +17,8 @@ for cog in cog_list:
 @client.event
 async def on_ready():
     teams_db = read_tournament_db()
-    teams_not_eliminated = ["Team Big Chungus", "SARS-CoV-3", "ali vefa fanclub", "isim bulamadık", "nE",
-                            "NEŞESİNE YAŞAM", "1.yiz kasmayın", "kms", "i may be stupid", ".`**HIDDEN**`.", "Zurna",
-                            "bucocukamerikalı"]
+    teams_not_eliminated = ["Team Big Chungus", "SARS-CoV-3", "ali vefa fanclub", "isim bulamadık", 
+                            "NEŞESİNE YAŞAM",  ".`**HIDDEN**`."]
     guild = client.get_guild(402213530599948299)
     player_role = discord.utils.get(guild.roles, id=693574523324203009)
 
