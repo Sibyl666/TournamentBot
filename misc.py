@@ -26,10 +26,9 @@ class Misc(commands.Cog):
                 return
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
-        async def on_message(message):
-            if "revolver ocelot" in message.content.lower():
-                await message.delete()
+    async def on_message(message):
+        if "revolver ocelot" in message.content.lower():
+            await message.delete()
 
 
 def setup(bot):
