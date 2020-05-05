@@ -25,6 +25,12 @@ class Misc(commands.Cog):
                 await ctx.send(discord_user.mention)
                 return
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        async def on_message(message):
+            if "revolver ocelot" in message.content.lower():
+                await message.delete()
+
 
 def setup(bot):
     bot.add_cog(Misc(bot))
