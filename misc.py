@@ -27,7 +27,7 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if "revolver ocelot" in message.content.lower():
+        if "revolver" in message.content.lower() or "ocelot" in message.content.lower():
             await message.delete()
 
 
