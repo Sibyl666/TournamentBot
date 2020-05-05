@@ -97,7 +97,7 @@ class Matches(commands.Cog):
         embed.title = f"{date_string}",
         
         title_text = ""
-        team_colored_name = ["Mavi Takım", "Kırmızı Takım"]
+        team_colored_name = ["Kırmızı Takım", "Mavi Takım"]
         for index, (team_name, team_data) in enumerate(match_data["teams"].items()):
             
             if index == 0:
