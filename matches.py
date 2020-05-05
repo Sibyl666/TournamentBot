@@ -150,7 +150,7 @@ class Matches(commands.Cog):
         time: Time of the qualifier match in format (dd/mm HH:MM)
         """
 
-        pools = ["W1", "W2", "W3"]
+        pools = ["W1", "W2", "W3","W4"]
         if pool not in pools:
             await ctx.send(f"`{pool}` yok.")
             return
